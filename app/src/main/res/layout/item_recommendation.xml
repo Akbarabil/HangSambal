@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:clickable="true"
+    android:foreground="?selectableItemBackground"
+    android:layout_marginBottom="8dp"
+    app:cardBackgroundColor="@color/white"
+    app:cardElevation="0dp"
+    app:cardCornerRadius="8dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="12dp"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/imageViewToko"
+            android:layout_width="120dp"
+            android:layout_height="140dp"
+            android:layout_marginRight="12dp"
+            android:adjustViewBounds="true"
+            android:scaleType="centerCrop"
+            android:src="@drawable/ic_no_image" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/textViewNamaToko"
+                style="@style/PoppinsRegularArsenicText3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                tools:text="BU HANY"/>
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="4dp"
+                android:background="@color/green_light"/>
+
+            <TextView
+                android:id="@+id/textViewAlamatToko"
+                style="@style/PoppinsRegularArsenicText1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                tools:text="Jl. Bambu No. 34, RT005/RW002, Cimanggis, Depok"/>
+
+            <TextView
+                android:id="@+id/textViewJarakToko"
+                style="@style/poppinsBoldText3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="right"
+                tools:text="3 m"/>
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="20dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="start"
+                android:orientation="horizontal">
+
+                <ImageButton
+                    android:id="@+id/mapBtn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:background="#00FFFFFF"
+                    android:contentDescription="Map Btn"
+                    android:src="@drawable/ic_map_icon" />
+
+                <ImageButton
+                    android:id="@+id/transaksiBtn"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:background="#00FFFFFF"
+                    android:contentDescription="Spreading Btn"
+                    android:src="@drawable/ic_transaction_icon" />
+            </LinearLayout>
+        </LinearLayout>
+
+    </LinearLayout>
+
+</androidx.cardview.widget.CardView>
