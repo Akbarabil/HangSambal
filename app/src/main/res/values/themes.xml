@@ -1,0 +1,108 @@
+<resources>
+    <!-- Base application theme. -->
+    <style name="Base.Theme.HangSambal" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/green_dark</item>
+    </style>
+
+    <style name="Theme.HangSambal" parent="Base.Theme.HangSambal" />
+
+    <style name="ShapeAppearance.App.CircleImageView" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
+
+    <!-- Poppins Regular Text -->
+    <style name="poppinsRegularText">
+        <item name="android:fontFamily">@font/poppins_reguler</item>
+        <item name="android:textSize">@dimen/text1</item>
+    </style>
+
+    <style name="poppinsRegularText2">
+        <item name="android:fontFamily">@font/poppins_reguler</item>
+        <item name="android:textSize">@dimen/text2</item>
+    </style>
+
+    <style name="poppinsRegularText3">
+        <item name="android:fontFamily">@font/poppins_reguler</item>
+        <item name="android:textSize">@dimen/text3</item>
+    </style>
+
+    <style name="poppinsRegularText4">
+        <item name="android:fontFamily">@font/poppins_reguler</item>
+        <item name="android:textSize">@dimen/text4</item>
+    </style>
+
+    <!-- Poppins Regular Arsenic Text -->
+    <style name="PoppinsRegularArsenicText1">
+        <item name="android:fontFamily">@font/poppins_reguler</item>
+        <item name="android:color">@color/arsenic</item>
+        <item name="android:textSize">@dimen/text1</item>
+    </style>
+
+    <style name="PoppinsRegularArsenicText2">
+        <item name="android:fontFamily">@font/poppins_reguler</item>
+        <item name="android:color">@color/arsenic</item>
+        <item name="android:textSize">@dimen/text2</item>
+    </style>
+
+    <style name="PoppinsRegularArsenicText3">
+        <item name="android:fontFamily">@font/poppins_reguler</item>
+        <item name="android:color">@color/arsenic</item>
+        <item name="android:textSize">@dimen/text3</item>
+    </style>
+
+    <style name="PoppinsRegularArsenicText4">
+        <item name="android:fontFamily">@font/poppins_reguler</item>
+        <item name="android:color">@color/arsenic</item>
+        <item name="android:textSize">@dimen/text4</item>
+    </style>
+
+    <!-- Poppins Bold Text -->
+    <style name="poppinsBoldText">
+        <item name="android:fontFamily">@font/poppins_bold</item>
+        <item name="android:textSize">@dimen/text1</item>
+    </style>
+
+    <style name="poppinsBoldText2">
+        <item name="android:fontFamily">@font/poppins_bold</item>
+        <item name="android:textSize">@dimen/text2</item>
+    </style>
+
+    <style name="poppinsBoldText3">
+        <item name="android:fontFamily">@font/poppins_bold</item>
+        <item name="android:textSize">@dimen/text3</item>
+    </style>
+
+    <style name="poppinsBoldText4">
+        <item name="android:fontFamily">@font/poppins_bold</item>
+        <item name="android:textSize">@dimen/text4</item>
+    </style>
+
+    <!-- Poppins Semibold Arsenic Text -->
+    <style name="PoppinsSemiboldArsenicText1">
+        <item name="android:fontFamily">@font/poppins_semibold</item>
+        <item name="android:color">@color/arsenic</item>
+        <item name="android:textSize">@dimen/text1</item>
+    </style>
+
+    <style name="PoppinsSemiboldArsenicText2">
+        <item name="android:fontFamily">@font/poppins_semibold</item>
+        <item name="android:color">@color/arsenic</item>
+        <item name="android:textSize">@dimen/text2</item>
+    </style>
+
+    <style name="PoppinsSemiboldArsenicText3">
+        <item name="android:fontFamily">@font/poppins_semibold</item>
+        <item name="android:color">@color/arsenic</item>
+        <item name="android:textSize">@dimen/text3</item>
+    </style>
+
+    <style name="PoppinsSemiboldArsenicText4">
+        <item name="android:fontFamily">@font/poppins_semibold</item>
+        <item name="android:color">@color/arsenic</item>
+        <item name="android:textSize">@dimen/text4</item>
+    </style>
+
+
+</resources>
