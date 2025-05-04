@@ -36,7 +36,7 @@
                 style="@style/PoppinsRegularArsenicText3"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                tools:text="BU HANY"/>
+                tools:text="Toko Chesta"/>
 
             <View
                 android:layout_width="match_parent"
@@ -50,7 +50,7 @@
                 style="@style/PoppinsRegularArsenicText1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                tools:text="Jl. Bambu No. 34, RT005/RW002, Cimanggis, Depok"/>
+                tools:text="Jl. Nias No 2 Sananwetan, Kota Blitar"/>
 
             <TextView
                 android:id="@+id/textViewJarakToko"
@@ -58,7 +58,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:gravity="right"
                 tools:text="3 m"/>
 
             <Space

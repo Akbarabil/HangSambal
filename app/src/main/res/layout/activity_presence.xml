@@ -24,14 +24,13 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:gravity="center"
-            android:layout_marginTop="10dp"
             android:layout_gravity="center">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Presensi"
-                style="@style/poppinsBoldText5"
+                style="@style/poppinsBoldText4"
                 android:gravity="center"
                 />
 
@@ -57,13 +56,13 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical">
-            
+
             <TextClock
                 android:id="@+id/textViewJam"
+                style="@style/poppinsBoldText6"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="15dp"
-                style="@style/poppinsBoldText7"
                 android:gravity="center"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -71,10 +70,11 @@
 
             <TextView
                 android:id="@+id/textViewLokasi"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:gravity="center"
-                style="@style/poppinsBoldText5"
+                android:layout_gravity="center"
+
+                style="@style/poppinsBoldText6"
                 android:layout_marginTop="10dp"
                 android:text="Sananwetan"/>
 

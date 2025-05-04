@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/item_beranda"
+        android:icon="@drawable/ic_beranda_logo"
+        android:title="beranda" />
+    <item
+        android:id="@+id/rekomendasi"
+        android:icon="@drawable/ic_rekomendasi_logo"
+        android:title="rekomendasi" />
+    <item
+        android:id="@+id/tambah_toko"
+        android:icon="@drawable/ic_toko_logo"
+        android:title="tambah toko" />
+    <item
+        android:id="@+id/profil"
+        android:icon="@drawable/ic_profil_logo"
+        android:title="profil" />
+
+
+</menu>

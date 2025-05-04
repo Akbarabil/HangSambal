@@ -79,6 +79,11 @@
         <item name="android:textSize">@dimen/text4</item>
     </style>
 
+    <style name="poppinsBoldText6">
+        <item name="android:fontFamily">@font/poppins_bold</item>
+        <item name="android:textSize">@dimen/text6</item>
+    </style>
+
     <!-- Poppins Semibold Arsenic Text -->
     <style name="PoppinsSemiboldArsenicText1">
         <item name="android:fontFamily">@font/poppins_semibold</item>

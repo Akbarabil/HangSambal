@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "854244633418",
+    "project_id": "hangsambal",
+    "storage_bucket": "hangsambal.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:854244633418:android:adc9171d4b5fd91d10afb3",
+        "android_client_info": {
+          "package_name": "com.example.hangsambal"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCVgYc9rwBHU-SCm-MfEsGAtoILWQF6B6o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

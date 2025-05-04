@@ -1,61 +1,82 @@
 package com.example.hangsambal.view.activity
 
+import android.content.Intent
 import android.os.Bundle
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import com.example.hangsambal.R
+import androidx.lifecycle.ViewModelProvider
+import com.example.hangsambal.check.InternetUtils
 import com.example.hangsambal.databinding.ActivityLoginBinding
+import com.example.hangsambal.viewmodel.LoginViewModel
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseSequence
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView
 import uk.co.deanwild.materialshowcaseview.ShowcaseConfig
 
 
 class LoginActivity : AppCompatActivity() {
-
     private lateinit var binding: ActivityLoginBinding
+    private lateinit var viewModel: LoginViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Inisialisasi View Binding
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        // Aktifkan Edge-to-Edge
-        enableEdgeToEdge()
+        // Reset agar tutorial selalu muncul saat testing
+        MaterialShowcaseView.resetSingleUse(this, "SHOWCASE_LOGIN")
 
-        // Atur padding sesuai system bars
-        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
+        binding.root.post {
+            showStepByStepTutorials()
+        }
+        viewModel = ViewModelProvider(this).get(LoginViewModel::class.java)
+
+        binding.materialButtonLogin.setOnClickListener {
+            InternetUtils.checkInternetBeforeAction(this) {
+                if ((binding.textInputEditTextUsername.text.isNullOrEmpty() || binding.textInputEditTextUsername.text.isNullOrBlank()) && (binding.textInputEditTextPassword.text.isNullOrEmpty() || binding.textInputEditTextPassword.text.isNullOrBlank())) {
+                    binding.textInputEditTextUsername.error = "Mohon isi username"
+                    binding.textInputEditTextPassword.error = "Mohon isi password"
+                } else if (binding.textInputEditTextUsername.text.isNullOrEmpty() || binding.textInputEditTextUsername.text.isNullOrBlank()) {
+                    binding.textInputEditTextUsername.error = "Mohon isi username"
+                } else if (binding.textInputEditTextPassword.text.isNullOrEmpty() || binding.textInputEditTextPassword.text.isNullOrBlank()) {
+                    binding.textInputEditTextPassword.error = "Mohon isi password"
+                } else {
+                    binding.materialButtonLogin.isEnabled = false
+                    viewModel.signIn(
+                        baseContext,
+                        binding.textInputEditTextUsername.text.toString(),
+                        binding.textInputEditTextPassword.text.toString()
+                    )
+                }
+            }
         }
 
-        // Tambahkan logika tambahan jika diperlukan, misalnya:
-        showStepByStepTutorials()
-
+        binding.materialButtonLogin.setOnClickListener {
+            val intent = Intent(this, PresenceActivity::class.java)
+            startActivity(intent)
+            finish()
+        }
     }
+
     private fun showStepByStepTutorials() {
         val config = ShowcaseConfig()
-        config.delay = 500 // Waktu jeda antar tutorial dalam milidetik
+        config.delay = 500
 
-        val sequence = MaterialShowcaseSequence(this, "SHOWCASE_SEQUENCE_ID")
+        val sequence = MaterialShowcaseSequence(this, "SHOWCASE_LOGIN")
         sequence.setConfig(config)
 
-        // Tutorial untuk tombol pertama
         sequence.addSequenceItem(
-            MaterialShowcaseView.Builder(this)
-                .setTarget(findViewById(R.id.testView1)) // Tombol pertama
-                .setTitleText("Gambar Login")
-                .setDismissText("Lanjut")
-                .setContentText("Menandakan anda berhasil login.")
-                .withRectangleShape(true)
-                .setShapePadding(8)
-                .build()
+            MaterialShowcaseView.Builder(this).setTarget(binding.textInputEditTextUsername)
+                .setTitleText("Username").setDismissText("Oke")
+                .setContentText("Masukkan data username anda").withRectangleShape(false)
+                .setShapePadding(8).build()
         )
 
-        sequence.start() // Memulai tutorial bertahap
+        sequence.addSequenceItem(
+            MaterialShowcaseView.Builder(this).setTarget(binding.textInputEditTextPassword)
+                .setTitleText("Password").setDismissText("Oke")
+                .setContentText("Masukkan password Anda dengan benar").withRectangleShape(false)
+                .setShapePadding(8).build()
+        )
+
+        sequence.start()
     }
 }

@@ -30,21 +30,17 @@ class FeedbackActivity : AppCompatActivity() {
             insets
         }
 
-        // Jalankan animasi Lottie
         startLottieAnimation()
     }
 
     private fun startLottieAnimation() {
-        binding.lottieConfirm.playAnimation() // Mulai animasi
+        binding.lottieConfirm.repeatCount = 0
+        binding.lottieConfirm.playAnimation()
 
-        // Hentikan animasi setelah 4 detik
-        handler.postDelayed({
-            binding.lottieConfirm.pauseAnimation()
-        }, 5000)
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        handler.removeCallbacksAndMessages(null) // Hapus handler untuk mencegah memory leak
+        handler.removeCallbacksAndMessages(null)
     }
 }
