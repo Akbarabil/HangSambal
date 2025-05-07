@@ -5,4 +5,5 @@
     <string name="app_version_name">1.0</string>
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="mapbox_access_token">sk.eyJ1IjoiYWJhYmlsYWJpbCIsImEiOiJjbWFhc2JjeGEyMzh4MmpxemQxaXc2YmloIn0.7UPWL6pxrOJ240xnTdrMPg</string>
 </resources>

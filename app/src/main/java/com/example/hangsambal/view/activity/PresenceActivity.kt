@@ -52,7 +52,7 @@ class PresenceActivity : AppCompatActivity(), LocationListener {
     private var longitude: String = ""
     private var photoPresence: File? = null
     private var jwt: String = ""
-    private var isFakeGPS: Boolean = false
+//    private var isFakeGPS: Boolean = false
     private var isFirstOpenCamera: Boolean = true
 
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
@@ -290,7 +290,6 @@ class PresenceActivity : AppCompatActivity(), LocationListener {
     }
 
     private fun getGeocoder(location: Location) {
-        if (!(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && location.isMock) && !location.isFromMockProvider) {
             val geocoder = Geocoder(this, Locale.getDefault())
             var addresses: List<Address>? = emptyList()
             try {
@@ -319,14 +318,47 @@ class PresenceActivity : AppCompatActivity(), LocationListener {
                 viewModel.stateLocation.value = State.ERROR
                 startLocationUpdates()
             }
-        } else {
-            if (!isFakeGPS) {
-                isFakeGPS = true
-                viewModel.stateLocation.value = State.COMPLETE
-                showAlertDialogFakeGPS()
-            }
-        }
+
     }
+
+//    private fun getGeocoder(location: Location) {
+//        if (!(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && location.isMock) && !location.isFromMockProvider) {
+//            val geocoder = Geocoder(this, Locale.getDefault())
+//            var addresses: List<Address>? = emptyList()
+//            try {
+//                addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
+//            } catch (e: Exception) {
+//                e.printStackTrace()
+//            }
+//
+//            Log.e("address", addresses?.firstOrNull()?.getAddressLine(0).toString())
+//
+//            if (addresses != null && addresses.isNotEmpty()) {
+//                latitude = location.latitude.toString()
+//                longitude = location.longitude.toString()
+//                address = addresses[0].getAddressLine(0).toString()
+//                kecamatan = if (addresses[0].locality.toString().contains("kecamatan", true)) {
+//                    addresses[0].locality.toString().replaceFirst("kecamatan ", "", true)
+//                } else {
+//                    addresses[0].locality.toString()
+//                }
+//                binding.textViewLokasi.text = kecamatan.toString()
+//                viewModel.stateLocation.value = State.COMPLETE
+//                if (isFirstOpenCamera) {
+//                    isFirstOpenCamera = false
+//                }
+//            } else {
+//                viewModel.stateLocation.value = State.ERROR
+//                startLocationUpdates()
+//            }
+//        } else {
+//            if (!isFakeGPS) {
+//                isFakeGPS = true
+//                viewModel.stateLocation.value = State.COMPLETE
+//                showAlertDialogFakeGPS()
+//            }
+//        }
+//    }
 
     private fun startLocationUpdates() {
         if ((ContextCompat.checkSelfPermission(

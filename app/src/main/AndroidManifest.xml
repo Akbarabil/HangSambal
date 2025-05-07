@@ -27,6 +27,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.HangSambal"
         tools:targetApi="31">
+        <meta-data
+            android:name="com.mapbox.token"
+            android:value="sk.eyJ1IjoiYWJhYmlsYWJpbCIsImEiOiJjbWFhc2JjeGEyMzh4MmpxemQxaXc2YmloIn0.7UPWL6pxrOJ240xnTdrMPg"/>
         <activity
             android:name=".view.activity.MerchantDataActivity"
             android:exported="false" />
