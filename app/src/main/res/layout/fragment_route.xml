@@ -13,19 +13,36 @@
         android:layout_width="match_parent"
         android:layout_height="380dp" />
 
-    <Button
-        android:id="@+id/refreshButton"
-        android:layout_marginTop="5dp"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Refresh" />
+        android:orientation="horizontal"
+        android:layout_marginTop="5dp">
+
+        <Button
+            android:id="@+id/refreshButton"
+            android:layout_marginTop="5dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Refresh" />
+
+        <TextView
+            android:id="@+id/distanceTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Total Jarak: "
+            android:layout_marginLeft="16dp"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewListToko"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
         android:overScrollMode="never"
+        android:layout_marginTop="10dp"
         tools:listitem="@layout/item_recommendation" />
 
 </LinearLayout>

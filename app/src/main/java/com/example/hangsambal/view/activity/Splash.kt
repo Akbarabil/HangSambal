@@ -36,9 +36,17 @@ class Splash : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_splash)
-        Log.d("SplashActivity", "onCreate: Splash screen dimulai")
 
+        // ✅ Atur fullscreen sebelum menampilkan layout
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_FULLSCREEN,
+            WindowManager.LayoutParams.FLAG_FULLSCREEN
+        )
+
+        setContentView(R.layout.activity_splash)
+        Log.d("SplashActivity", "Layout splash telah ditampilkan")
+
+        // ✅ Cek versi Android minimum
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             Log.e("SplashActivity", "Android versi tidak didukung")
             showToast("Android Anda tidak support!")
@@ -46,13 +54,10 @@ class Splash : AppCompatActivity() {
             return
         }
 
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_FULLSCREEN,
-            WindowManager.LayoutParams.FLAG_FULLSCREEN
-        )
-        Log.d("SplashActivity", "Fullscreen diaktifkan")
-
+        // ✅ Delay agar splash screen terlihat dulu
         lifecycleScope.launch {
+            delay(1500) // tampilkan splash selama 1.5 detik
+
             Log.d("SplashActivity", "Memeriksa koneksi internet...")
             if (checkInternetConnection()) {
                 Log.d("SplashActivity", "Internet tersedia, lanjut ke permission")
@@ -71,7 +76,7 @@ class Splash : AppCompatActivity() {
         return true
     }
 
-    private suspend fun isInternetAvailable(): Boolean {
+    private fun isInternetAvailable(): Boolean {
         val connectivityManager =
             getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         val network = connectivityManager.activeNetwork ?: return false
@@ -116,12 +121,10 @@ class Splash : AppCompatActivity() {
                         Log.d("SplashActivity", "Jumlah permission diberikan: ${it.grantedPermissionResponses.size}")
                         Log.d("SplashActivity", "Jumlah permission ditolak: ${it.deniedPermissionResponses.size}")
 
-                        // Log setiap permission yang diberikan
                         it.grantedPermissionResponses.forEach { granted ->
                             Log.d("SplashActivity", "✅ Diizinkan: ${granted.permissionName}")
                         }
 
-                        // Log setiap permission yang ditolak
                         it.deniedPermissionResponses.forEach { denied ->
                             val permanently = if (denied.isPermanentlyDenied) " (PERMANEN)" else ""
                             Log.w("SplashActivity", "❌ Ditolak: ${denied.permissionName}$permanently")
