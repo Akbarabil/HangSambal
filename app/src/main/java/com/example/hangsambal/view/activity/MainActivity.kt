@@ -10,6 +10,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.example.hangsambal.R
 import com.example.hangsambal.databinding.ActivityMainBinding
+import com.example.hangsambal.view.fragment.HistoryFragment
 import com.example.hangsambal.view.fragment.HomeFragment
 import com.example.hangsambal.view.fragment.MerchantFragment
 import com.example.hangsambal.view.fragment.ProfileFragment
@@ -43,7 +44,7 @@ class MainActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemS
                 return true
             }
             R.id.tambah_toko -> {
-                fragmentActivity = MerchantFragment() // Fragment untuk Profil
+                fragmentActivity = HistoryFragment() // Fragment untuk Profil
                 loadFragment(fragmentActivity)
                 return true
             }
