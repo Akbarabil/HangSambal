@@ -4,14 +4,19 @@ import android.Manifest
 import android.app.ProgressDialog
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.Color
+import android.graphics.ImageDecoder
 import android.location.Address
 import android.location.Geocoder
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Looper
+import android.provider.MediaStore
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
@@ -20,9 +25,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import com.example.hangsambal.R
 import com.example.hangsambal.check.InternetUtils
 import com.example.hangsambal.databinding.ActivityPresenceBinding
 import com.example.hangsambal.util.Camera
+import com.example.hangsambal.util.KeyIntent
 import com.example.hangsambal.util.Prefs
 import com.example.hangsambal.util.State
 import com.example.hangsambal.viewmodel.PresenceViewModel
@@ -32,18 +40,27 @@ import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.LocationSettingsRequest
+import kotlinx.coroutines.launch
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseSequence
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView
 import uk.co.deanwild.materialshowcaseview.ShowcaseConfig
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
+import id.zelory.compressor.Compressor
+import id.zelory.compressor.constraint.default
+import id.zelory.compressor.constraint.destination
+
+
 
 class PresenceActivity : AppCompatActivity(), LocationListener {
     private lateinit var binding: ActivityPresenceBinding
     private lateinit var viewModel: PresenceViewModel
     private lateinit var dialog: ProgressDialog
     private lateinit var dialogLocation: ProgressDialog
-    private lateinit var locationCallback: LocationCallback
     private lateinit var locationManager: LocationManager
     private val locationPermissionCode = 2
     private var address: String? = null
@@ -52,25 +69,34 @@ class PresenceActivity : AppCompatActivity(), LocationListener {
     private var longitude: String = ""
     private var photoPresence: File? = null
     private var jwt: String = ""
-//    private var isFakeGPS: Boolean = false
+    private var isFakeGPS: Boolean = false
     private var isFirstOpenCamera: Boolean = true
+    private var currentPhotoPath: String = ""
 
+    val REQUEST_CODE = 200
+
+    // Client Google untuk lokasi (lebih presisi daripada LocationManager biasa)
     private lateinit var fusedLocationProviderClient: FusedLocationProviderClient
     private lateinit var locationRequest: LocationRequest
     private lateinit var locationSettingsRequestBuilder: LocationSettingsRequest.Builder
+    private lateinit var locationCallback: LocationCallback
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         binding = ActivityPresenceBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
         // Reset agar tutorial selalu muncul saat testing
         MaterialShowcaseView.resetSingleUse(this, "SHOWCASE_PRESENCE")
+
+
 
         binding.root.post {
             showStepByStepTutorials()
         }
 
+        // Inisialisasi dialog loading
         dialog = ProgressDialog(this)
         dialogLocation = ProgressDialog(this)
 
@@ -80,21 +106,32 @@ class PresenceActivity : AppCompatActivity(), LocationListener {
             finish()
         }
 
-//        jwt = if (intent.getStringExtra(KeyIntent.KEY_JWT).toString().isNullOrEmpty()) {
-//            Prefs(this).jwt.toString()
-//        } else {
-//            intent.getStringExtra(KeyIntent.KEY_JWT).toString()
-//        }
+        // Ambil JWT dari intent, jika tidak ada maka ambil dari local storage (Prefs)
+        val jwt = if (intent.getStringExtra(KeyIntent.KEY_JWT).isNullOrEmpty()) {
+            Prefs(this).jwt.toString()
+        } else {
+            intent.getStringExtra(KeyIntent.KEY_JWT).toString()
+        }
 
+        Log.d("JWT_TOKEN", jwt)
+
+
+
+        // Inisialisasi lokasi
         locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
+
+        // Set pengaturan permintaan lokasi
         locationRequest = LocationRequest()
         locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
         locationRequest.interval = 5000
         locationRequest.fastestInterval = 2000
+
+        // Siapkan builder untuk pengaturan lokasi
         locationSettingsRequestBuilder = LocationSettingsRequest.Builder()
         locationSettingsRequestBuilder.addLocationRequest(locationRequest)
 
+        // Callback yang dipanggil saat lokasi berhasil diperoleh
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(p0: LocationResult) {
                 val loc = p0.lastLocation
@@ -111,59 +148,61 @@ class PresenceActivity : AppCompatActivity(), LocationListener {
         }
 
         viewModel = ViewModelProvider(this).get(PresenceViewModel::class.java)
+
+        // Cek dan minta izin lokasi jika belum diberikan
         checkSelfPermission()
 
-        //saat menekan kotak gambar kamera
+        // Ketika CardView ditekan (biasanya ikon kamera atau lokasi)
         binding.cardView.setOnClickListener {
             if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                // Jika alamat belum didapatkan, minta lokasi dulu
                 if (address.isNullOrEmpty()) {
+                    Log.d("PresenceActivity", "Alamat masih kosong, memulai pembaruan lokasi.")
                     startLocationUpdates()
                 } else {
+                    Log.d("PresenceActivity", "Alamat sudah ada, membuka kamera.")
                     openCamera()
                 }
             } else {
+                Log.d("PresenceActivity", "GPS tidak aktif.")
                 Toast.makeText(this, "Mohon aktifkan GPS anda", Toast.LENGTH_SHORT).show()
             }
         }
 
-        //saat menekan tombol simpan
+        // Tombol simpan ditekan (untuk kirim presensi)
         binding.materialButtonSimpan.setOnClickListener {
             if (photoPresence == null) {
-//                showAlertDialog("Mohon ambil foto terlebih dahulu")
-                val intent = Intent(this, ProductPickupActivity::class.java)
-                startActivity(intent)
-                finish()
+                showAlertDialog("Mohon ambil foto terlebih dahulu")
             } else {
+                // Pastikan ada koneksi internet sebelum kirim data
                 InternetUtils.checkInternetBeforeAction(this) {
                     binding.materialButtonSimpan.isEnabled = false
+                    val isMock = if (isFakeGPS) 1 else 0
                     viewModel.postPresence(
                         this,
                         jwt,
                         photoPresence!!,
                         kecamatan.toString(),
                         latitude,
-                        longitude
+                        longitude,
+                        isMock
                     )
                 }
             }
         }
 
+        // Observasi error dari ViewModel
         viewModel.errorMessage.observe(this) {
             if (!it.isNullOrEmpty()) {
                 showAlertDialog(it.toString())
             }
         }
 
+        // Pantau state loading lokasi
         viewModel.stateLocation.observe(this) {
             when (it) {
-                State.COMPLETE -> {
-                    dialogLocation.dismiss()
-                }
-
-                State.LOADING -> {
-                    showProgressDialogLocation()
-                }
-
+                State.COMPLETE -> dialogLocation.dismiss()
+                State.LOADING -> showProgressDialogLocation()
                 else -> {
                     dialogLocation.dismiss()
                     showAlertDialog("Terjadi kesalahan saat mendapatkan lokasi, mohon coba lagi")
@@ -171,26 +210,33 @@ class PresenceActivity : AppCompatActivity(), LocationListener {
             }
         }
 
+        // Pantau state saat kamera digunakan
+        viewModel.stateCamera.observe(this) {
+            when (it) {
+                State.COMPLETE -> dialog.dismiss()
+                State.LOADING -> showProgressDialog()
+                else -> dialog.dismiss()
+            }
+        }
+
+        // Pantau state saat pengiriman presensi
         viewModel.statePresence.observe(this) { state ->
             when (state) {
                 State.COMPLETE -> {
-                    // Menangani state selesai
                     dialog.dismiss()
                     binding.materialButtonSimpan.isEnabled = true
                     val intent = Intent(baseContext, ProductPickupActivity::class.java)
-//                    intent.putExtra(KeyIntent.KEY_IS_PRESENCE, true)
+                    intent.putExtra(KeyIntent.KEY_IS_PRESENCE, true)
                     startActivity(intent)
                     finish()
                 }
 
                 State.LOADING -> {
-                    // Menampilkan progress dan tetap menonaktifkan tombol
                     showProgressDialog()
                     binding.materialButtonSimpan.isEnabled = false
                 }
 
                 else -> {
-                    // Menangani state lainnya
                     dialog.dismiss()
                     binding.materialButtonSimpan.isEnabled = true
                 }
@@ -260,7 +306,6 @@ class PresenceActivity : AppCompatActivity(), LocationListener {
             )
         }
     }
-    //callback dari checkSelfPermission
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -283,9 +328,11 @@ class PresenceActivity : AppCompatActivity(), LocationListener {
             }
         }
     }
+
     private fun openCamera() {
+        Log.d("PresenceActivity", "Fungsi openCamera() dipanggil.")
         viewModel.stateCamera.value = State.LOADING
-//        val intent = Intent(this@PresenceActivity, CameraActivity::class.java)
+        val intent = Intent(this@PresenceActivity, CameraActivity::class.java)
         startActivityForResult(intent, Camera.REQUEST_CODE_PERMISSIONS)
     }
 
@@ -321,44 +368,6 @@ class PresenceActivity : AppCompatActivity(), LocationListener {
 
     }
 
-//    private fun getGeocoder(location: Location) {
-//        if (!(Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && location.isMock) && !location.isFromMockProvider) {
-//            val geocoder = Geocoder(this, Locale.getDefault())
-//            var addresses: List<Address>? = emptyList()
-//            try {
-//                addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
-//            } catch (e: Exception) {
-//                e.printStackTrace()
-//            }
-//
-//            Log.e("address", addresses?.firstOrNull()?.getAddressLine(0).toString())
-//
-//            if (addresses != null && addresses.isNotEmpty()) {
-//                latitude = location.latitude.toString()
-//                longitude = location.longitude.toString()
-//                address = addresses[0].getAddressLine(0).toString()
-//                kecamatan = if (addresses[0].locality.toString().contains("kecamatan", true)) {
-//                    addresses[0].locality.toString().replaceFirst("kecamatan ", "", true)
-//                } else {
-//                    addresses[0].locality.toString()
-//                }
-//                binding.textViewLokasi.text = kecamatan.toString()
-//                viewModel.stateLocation.value = State.COMPLETE
-//                if (isFirstOpenCamera) {
-//                    isFirstOpenCamera = false
-//                }
-//            } else {
-//                viewModel.stateLocation.value = State.ERROR
-//                startLocationUpdates()
-//            }
-//        } else {
-//            if (!isFakeGPS) {
-//                isFakeGPS = true
-//                viewModel.stateLocation.value = State.COMPLETE
-//                showAlertDialogFakeGPS()
-//            }
-//        }
-//    }
 
     private fun startLocationUpdates() {
         if ((ContextCompat.checkSelfPermission(
@@ -400,6 +409,8 @@ class PresenceActivity : AppCompatActivity(), LocationListener {
             }
         }
     }
+
+
     private fun showAlertDialog(message: String) {
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Pesan")
@@ -410,37 +421,101 @@ class PresenceActivity : AppCompatActivity(), LocationListener {
         builder.show()
     }
     private fun showProgressDialog() {
-        //show dialog
         dialog.setMessage("Mohon tunggu...")
         dialog.setCancelable(false)
         dialog.show()
     }
     private fun showProgressDialogLocation() {
-        //show dialog
         dialogLocation.setMessage("Sedang mencari lokasi...")
         dialogLocation.setCancelable(false)
         dialogLocation.show()
-    }
-    private fun showAlertDialogFakeGPS() {
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("Pesan")
-        builder.setCancelable(false)
-        builder.setMessage("Anda terdeteksi menggunakan lokasi palsu")
-        builder.setPositiveButton(android.R.string.yes) { dialog, which ->
-            dialog.dismiss()
-
-            Prefs(this).jwt = null
-            Prefs(this).idDistrict = null
-            val intent = Intent(this, LoginActivity::class.java)
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            startActivity(intent)
-        }
-        builder.show()
     }
 
     override fun onLocationChanged(p0: Location) {
         Log.e("Location", p0.latitude.toString() + " " + p0.longitude.toString())
         getGeocoder(p0)
+    }
+
+    private fun getOutputDirectory(): File {
+        val mediaDir = externalMediaDirs.firstOrNull()?.let {
+            File(it, resources.getString(R.string.app_name)).apply {
+                mkdirs()
+            }
+        }
+        return if (mediaDir != null && mediaDir.exists())
+            mediaDir else filesDir
+    }
+
+    private fun compressImage(uri: Uri) {
+        var bitmap: Bitmap? = null
+        val contentResolver = contentResolver
+        try {
+            bitmap = if (Build.VERSION.SDK_INT < 28) {
+                MediaStore.Images.Media.getBitmap(contentResolver, uri)
+            } else {
+                val source: ImageDecoder.Source = ImageDecoder.createSource(contentResolver, uri)
+                ImageDecoder.decodeBitmap(source)
+            }
+        } catch (e: java.lang.Exception) {
+            e.printStackTrace()
+        }
+
+        // Menghapus bagian watermark dan hanya menyimpan gambar biasa
+        val copyBitmap = bitmap?.copy(Bitmap.Config.ARGB_8888, true)
+
+        var newFile: File? = null
+        try {
+            newFile = File(getOutputDirectory(), "PhotoPresence.JPEG")
+            newFile.createNewFile()
+
+            if (newFile.exists()) {
+                // Convert bitmap to byte array
+                val bos = ByteArrayOutputStream()
+                copyBitmap?.compress(
+                    Bitmap.CompressFormat.JPEG,
+                    100,
+                    bos
+                ) // Menyimpan dalam format JPEG
+                val bitmapData = bos.toByteArray()
+
+                // Menulis byte array ke file
+                val fos = FileOutputStream(newFile)
+                fos.write(bitmapData)
+                fos.flush()
+                fos.close()
+
+                // Kompresi gambar
+                newFile.let {
+                    lifecycleScope.launch {
+                        Compressor.compress(this@PresenceActivity, it) {
+                            default(quality = 80, height = 480)
+                            destination(it)
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+
+        }
+
+        // Menampilkan gambar yang sudah diproses
+        binding.imageView.setImageBitmap(copyBitmap)
+        photoPresence = newFile
+        viewModel.stateCamera.value = State.COMPLETE
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == Camera.REQUEST_CODE_PERMISSIONS) {
+            val absolutePath = data?.getStringExtra(KeyIntent.KEY_CAMERA)
+            if (!absolutePath.isNullOrEmpty()) {
+                val uri = Uri.parse(absolutePath)
+                Log.e("uri", uri.toString())
+                compressImage(uri)
+            } else {
+                viewModel.stateCamera.value = State.ERROR
+            }
+        }
     }
 
     override fun onResume() {

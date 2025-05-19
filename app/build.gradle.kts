@@ -68,6 +68,14 @@ dependencies {
     // OkHttp untuk request ke Optimization API
     implementation ("com.squareup.okhttp3:okhttp:4.12.0")
 
+    // CameraX
+    implementation ("androidx.camera:camera-core:1.4.0")
+    implementation ("androidx.camera:camera-camera2:1.4.0")
+    implementation ("androidx.camera:camera-lifecycle:1.4.0")
+    implementation ("androidx.camera:camera-video:1.4.0")
+    implementation ("androidx.camera:camera-view:1.4.0")
+    implementation ("androidx.camera:camera-extensions:1.4.0")
+
     // JSON parser
     implementation ("org.json:json:20240303")
 
@@ -79,5 +87,8 @@ dependencies {
 
     debugImplementation ("com.github.chuckerteam.chucker:library:4.0.0")
     releaseImplementation ("com.github.chuckerteam.chucker:library-no-op:4.0.0")
+
+    //ImageCompresor
+    implementation ("id.zelory:compressor:3.0.1")
 
 }

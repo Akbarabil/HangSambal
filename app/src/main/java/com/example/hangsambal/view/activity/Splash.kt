@@ -8,21 +8,13 @@ import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import android.view.WindowManager
-import android.webkit.PermissionRequest
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import com.example.hangsambal.R
-import com.example.hangsambal.databinding.ActivitySplashBinding
 import com.example.hangsambal.util.Prefs
 import com.karumi.dexter.Dexter
 import com.karumi.dexter.MultiplePermissionsReport
@@ -30,31 +22,28 @@ import com.karumi.dexter.PermissionToken
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
 
 class Splash : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // ✅ Atur fullscreen sebelum menampilkan layout
+        // Atur fullscreen sebelum menampilkan layout
         window.setFlags(
             WindowManager.LayoutParams.FLAG_FULLSCREEN,
             WindowManager.LayoutParams.FLAG_FULLSCREEN
         )
 
         setContentView(R.layout.activity_splash)
-        Log.d("SplashActivity", "Layout splash telah ditampilkan")
 
-        // ✅ Cek versi Android minimum
+        // Cek versi Android minimum
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            Log.e("SplashActivity", "Android versi tidak didukung")
             showToast("Android Anda tidak support!")
             finishAffinity()
             return
         }
 
-        // ✅ Delay agar splash screen terlihat dulu
+        // Delay agar splash screen terlihat dulu
         lifecycleScope.launch {
             delay(1500) // tampilkan splash selama 1.5 detik
 
@@ -118,8 +107,14 @@ class Splash : AppCompatActivity() {
                     report?.let {
                         Log.d("SplashActivity", "=== HASIL PERMISSION CHECK ===")
                         Log.d("SplashActivity", "Semua diizinkan? ${it.areAllPermissionsGranted()}")
-                        Log.d("SplashActivity", "Jumlah permission diberikan: ${it.grantedPermissionResponses.size}")
-                        Log.d("SplashActivity", "Jumlah permission ditolak: ${it.deniedPermissionResponses.size}")
+                        Log.d(
+                            "SplashActivity",
+                            "Jumlah permission diberikan: ${it.grantedPermissionResponses.size}"
+                        )
+                        Log.d(
+                            "SplashActivity",
+                            "Jumlah permission ditolak: ${it.deniedPermissionResponses.size}"
+                        )
 
                         it.grantedPermissionResponses.forEach { granted ->
                             Log.d("SplashActivity", "✅ Diizinkan: ${granted.permissionName}")
@@ -127,7 +122,10 @@ class Splash : AppCompatActivity() {
 
                         it.deniedPermissionResponses.forEach { denied ->
                             val permanently = if (denied.isPermanentlyDenied) " (PERMANEN)" else ""
-                            Log.w("SplashActivity", "❌ Ditolak: ${denied.permissionName}$permanently")
+                            Log.w(
+                                "SplashActivity",
+                                "❌ Ditolak: ${denied.permissionName}$permanently"
+                            )
                         }
 
                         when {
@@ -135,10 +133,12 @@ class Splash : AppCompatActivity() {
                                 Log.d("SplashActivity", "Semua permission diberikan")
                                 lifecycleScope.launch { intentToMain() }
                             }
+
                             it.isAnyPermissionPermanentlyDenied -> {
                                 Log.w("SplashActivity", "Ada permission yang ditolak permanen")
                                 redirectToSettings()
                             }
+
                             else -> {
                                 Log.e("SplashActivity", "Permission tidak lengkap")
                                 showToast("Tolong berikan semua izin untuk aplikasi")

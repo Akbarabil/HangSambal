@@ -2,21 +2,93 @@ package com.example.hangsambal.viewmodel
 
 import android.content.Context
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import com.example.hangsambal.model.response.GetPresence
+import com.example.hangsambal.model.response.PostPresence
+import com.example.hangsambal.network.NetworkClient
+import com.example.hangsambal.util.Prefs
 import com.example.hangsambal.util.State
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
 import java.io.File
 
-class PresenceViewModel : ViewModel() {
+class PresenceViewModel : BaseViewModel() {
     var stateLocation = MutableLiveData<State>()
     var statePresence = MutableLiveData<State>()
-    var errorMessage = MutableLiveData<String>()
     var stateCamera = MutableLiveData<State>()
 
 
-    fun postPresence(context: Context, jwt: String, photo: File, kecamatan: String, latitude: String, longitude: String) {
+    fun postPresence(
+        context: Context,
+        jwt: String,
+        image: File,
+        kecamatan: String,
+        latitude: String,
+        longitude: String,
+        isMock: Int
+    ) {
+        statePresence.value = State.LOADING
+        NetworkClient().getService(context)
+            .postPresence(
+                jwt,
+                kecamatan,
+                latitude,
+                longitude,
+                MultipartBody.Part.createFormData(
+                    "image",
+                    image.getName(),
+                    RequestBody.create("image/*".toMediaTypeOrNull(), image)
+                ),
+                isMock
+            )
+            .enqueue(object : Callback<PostPresence> {
+                override fun onResponse(
+                    call: Call<PostPresence>,
+                    response: Response<PostPresence>
+                ) {
+                    if (response.isSuccessful) {
+                        if (response.body()?.dataPostPresence != null) {
+                            checkPresence(context, jwt)
+                        } else {
+                            statePresence.value = State.ERROR
+                            errorMessage.value = response.body()?.statusMessage
+                                ?: "Terjadi kesalahan. Silakan coba lagi."
+                        }
+                    } else {
+                        statePresence.value = State.ERROR
+                        errorMessage.value = response.body()?.statusMessage
+                    }
+                }
 
+                override fun onFailure(call: Call<PostPresence>, t: Throwable) {
+                    statePresence.value = State.ERROR
+                    handleFailure(t)
+                }
+            })
     }
-    fun checkPresence(context: Context, jwt: String) {
 
+
+    fun checkPresence(context: Context, jwt: String) {
+        NetworkClient().getService(context)
+            .getPresence(
+                jwt
+            )
+            .enqueue(object : Callback<GetPresence> {
+                override fun onResponse(call: Call<GetPresence>, response: Response<GetPresence>) {
+                    if (!response.body()?.dataPresence.isNullOrEmpty()) {
+                        statePresence.value = State.COMPLETE
+                        Prefs(context).jwt = jwt
+                        Prefs(context).idDistrict = response.body()?.dataPresence!!.firstOrNull()?.idDistrict
+                    }
+                }
+
+                override fun onFailure(call: Call<GetPresence>, t: Throwable) {
+                    statePresence.value = State.ERROR
+                    handleFailure(t)
+                }
+            })
     }
 }

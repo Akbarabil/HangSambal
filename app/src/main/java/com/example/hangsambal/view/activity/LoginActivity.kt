@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import com.example.hangsambal.check.InternetUtils
 import com.example.hangsambal.databinding.ActivityLoginBinding
+import com.example.hangsambal.util.KeyIntent
 import com.example.hangsambal.util.State
 import com.example.hangsambal.viewmodel.LoginViewModel
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseSequence
@@ -73,7 +74,7 @@ class LoginActivity : AppCompatActivity() {
                 } else {
                     // Jika belum presensi, diarahkan ke PresenceActivity dengan mengirimkan JWT
                     val intent = Intent(baseContext, PresenceActivity::class.java)
-//                    intent.putExtra(KeyIntent.KEY_JWT, jwt)
+                    intent.putExtra(KeyIntent.KEY_JWT, jwt)
                     startActivity(intent)
                     finish()
                 }
