@@ -9,8 +9,8 @@
         android:icon="@drawable/ic_rekomendasi_logo"
         android:title="rekomendasi" />
     <item
-        android:id="@+id/tambah_toko"
-        android:icon="@drawable/ic_toko_logo"
+        android:id="@+id/history"
+        android:icon="@drawable/ic_nav_riwayat"
         android:title="tambah toko" />
     <item
         android:id="@+id/profil"

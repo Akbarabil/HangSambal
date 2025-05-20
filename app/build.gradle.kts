@@ -91,4 +91,8 @@ dependencies {
     //ImageCompresor
     implementation ("id.zelory:compressor:3.0.1")
 
+    //GLide
+    implementation ("com.github.bumptech.glide:glide:4.13.0")
+    annotationProcessor ("com.github.bumptech.glide:compiler:4.13.0")
+
 }

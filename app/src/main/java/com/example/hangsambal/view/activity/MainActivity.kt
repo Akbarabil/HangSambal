@@ -43,7 +43,7 @@ class MainActivity : AppCompatActivity(), BottomNavigationView.OnNavigationItemS
                 loadFragment(fragmentActivity)
                 return true
             }
-            R.id.tambah_toko -> {
+            R.id.history -> {
                 fragmentActivity = HistoryFragment() // Fragment untuk Profil
                 loadFragment(fragmentActivity)
                 return true

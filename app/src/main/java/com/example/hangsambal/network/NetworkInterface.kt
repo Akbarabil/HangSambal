@@ -3,9 +3,12 @@ package com.example.hangsambal.network
 import com.example.hangsambal.model.request.PostPickup
 import com.example.hangsambal.model.response.Base
 import com.example.hangsambal.model.response.GetCekPickupFaktur
+import com.example.hangsambal.model.response.GetDashboardV2
 import com.example.hangsambal.model.response.GetHistory
+import com.example.hangsambal.model.response.GetPickup
 import com.example.hangsambal.model.response.GetPresence
 import com.example.hangsambal.model.response.GetProduct
+import com.example.hangsambal.model.response.GetShop
 import com.example.hangsambal.model.response.PostPresence
 import com.example.hangsambal.model.response.SignIn
 import okhttp3.MultipartBody
@@ -58,4 +61,30 @@ interface NetworkInterface {
         @Query("page") page: String,
         @Query("tanggal") tanggal: String,
     ): Call<GetHistory>
+
+    @GET("pickup")
+    fun getPickup(
+        @Header("Authorization") token: String
+    ): Call<GetPickup>
+
+    @GET("shop")
+    fun getShop(
+        @Header("Authorization") token: String,
+        @Query("lat_user") latitude: String,
+        @Query("lng_user") longitude: String,
+        @Query("page") page: String
+    ): Call<GetShop>
+
+    @GET("shop/rec")
+    fun getShopRecommendation(
+        @Header("Authorization") token: String,
+        @Query("lat_user") latitude: String,
+        @Query("lng_user") longitude: String,
+        @Query("page") page: String
+    ): Call<GetShop>
+
+    @GET("dashboard/all")
+    fun getDashboardV2(
+        @Header("Authorization") token: String
+    ): Call<GetDashboardV2>
 }

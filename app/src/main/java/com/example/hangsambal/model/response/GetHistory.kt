@@ -25,13 +25,3 @@ data class GetHistoryData(
     @SerializedName("NAMA_TOKO", alternate = ["NAMA_PASAR", "NAMA_AREA"])
     val nama: String?
 ) : Parcelable
-
-@Parcelize
-data class StatusPagination(
-    @SerializedName("TOTAL_DATA")
-    val totalData: Int?,
-    @SerializedName("PAGE")
-    val page: Int?,
-    @SerializedName("TOTAL_PAGE")
-    val totalPage: Int?
-) : Parcelable
