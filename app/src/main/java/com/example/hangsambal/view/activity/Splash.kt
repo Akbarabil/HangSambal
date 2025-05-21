@@ -9,13 +9,13 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.util.Log
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.hangsambal.R
 import com.example.hangsambal.util.Prefs
+import com.example.hangsambal.viewmodel.SplashViewModel
 import com.karumi.dexter.Dexter
 import com.karumi.dexter.MultiplePermissionsReport
 import com.karumi.dexter.PermissionToken
@@ -24,11 +24,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class Splash : AppCompatActivity() {
+private val viewModel = SplashViewModel()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Atur fullscreen sebelum menampilkan layout
         window.setFlags(
             WindowManager.LayoutParams.FLAG_FULLSCREEN,
             WindowManager.LayoutParams.FLAG_FULLSCREEN
@@ -36,20 +36,16 @@ class Splash : AppCompatActivity() {
 
         setContentView(R.layout.activity_splash)
 
-        // Cek versi Android minimum
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             showToast("Android Anda tidak support!")
             finishAffinity()
             return
         }
 
-        // Delay agar splash screen terlihat dulu
         lifecycleScope.launch {
-            delay(1500) // tampilkan splash selama 1.5 detik
+            delay(1500)
 
-            Log.d("SplashActivity", "Memeriksa koneksi internet...")
             if (checkInternetConnection()) {
-                Log.d("SplashActivity", "Internet tersedia, lanjut ke permission")
                 requestPermissionsWithDexter()
             }
         }
@@ -57,11 +53,9 @@ class Splash : AppCompatActivity() {
 
     private suspend fun checkInternetConnection(): Boolean {
         while (!isInternetAvailable()) {
-            Log.w("SplashActivity", "Tidak ada koneksi internet. Menunggu...")
             showToast("Menunggu koneksi internet...")
             delay(3000)
         }
-        Log.d("SplashActivity", "Koneksi internet tersedia")
         return true
     }
 
@@ -74,8 +68,6 @@ class Splash : AppCompatActivity() {
     }
 
     private fun requestPermissionsWithDexter() {
-        Log.d("SplashActivity", "Meminta permission dari pengguna")
-
         val permissions = mutableListOf(
             Manifest.permission.INTERNET,
             Manifest.permission.ACCESS_FINE_LOCATION,
@@ -105,42 +97,16 @@ class Splash : AppCompatActivity() {
             .withListener(object : MultiplePermissionsListener {
                 override fun onPermissionsChecked(report: MultiplePermissionsReport?) {
                     report?.let {
-                        Log.d("SplashActivity", "=== HASIL PERMISSION CHECK ===")
-                        Log.d("SplashActivity", "Semua diizinkan? ${it.areAllPermissionsGranted()}")
-                        Log.d(
-                            "SplashActivity",
-                            "Jumlah permission diberikan: ${it.grantedPermissionResponses.size}"
-                        )
-                        Log.d(
-                            "SplashActivity",
-                            "Jumlah permission ditolak: ${it.deniedPermissionResponses.size}"
-                        )
-
-                        it.grantedPermissionResponses.forEach { granted ->
-                            Log.d("SplashActivity", "✅ Diizinkan: ${granted.permissionName}")
-                        }
-
-                        it.deniedPermissionResponses.forEach { denied ->
-                            val permanently = if (denied.isPermanentlyDenied) " (PERMANEN)" else ""
-                            Log.w(
-                                "SplashActivity",
-                                "❌ Ditolak: ${denied.permissionName}$permanently"
-                            )
-                        }
-
                         when {
                             it.areAllPermissionsGranted() -> {
-                                Log.d("SplashActivity", "Semua permission diberikan")
                                 lifecycleScope.launch { intentToMain() }
                             }
 
                             it.isAnyPermissionPermanentlyDenied -> {
-                                Log.w("SplashActivity", "Ada permission yang ditolak permanen")
                                 redirectToSettings()
                             }
 
                             else -> {
-                                Log.e("SplashActivity", "Permission tidak lengkap")
                                 showToast("Tolong berikan semua izin untuk aplikasi")
                                 finish()
                             }
@@ -152,26 +118,36 @@ class Splash : AppCompatActivity() {
                     permissions: MutableList<com.karumi.dexter.listener.PermissionRequest>?,
                     token: PermissionToken?
                 ) {
-                    Log.d("SplashActivity", "Menampilkan rationale permission")
                     token?.continuePermissionRequest()
                 }
             }).check()
     }
 
     private suspend fun intentToMain() {
-        Log.d("SplashActivity", "Menentukan halaman selanjutnya...")
         if (Prefs(this).jwt.isNullOrEmpty()) {
-            Log.d("SplashActivity", "JWT kosong, mengarahkan ke LoginActivity")
             startActivity(Intent(this, LoginActivity::class.java))
+            finish()
         } else {
-            Log.d("SplashActivity", "JWT ditemukan, mengarahkan ke MainActivity")
-            startActivity(Intent(this, MainActivity::class.java))
+            viewModel.checkPresence(this)
+            viewModel.alreadyPresence.observe(this) { presenceStatus ->
+                when (presenceStatus) {
+                    0, 1 -> {
+                        Prefs(this).apply {
+                            jwt = null
+                            idDistrict = null
+                        }
+                        startActivity(Intent(this, LoginActivity::class.java))
+                    }
+
+                    2 -> startActivity(Intent(this, MainActivity::class.java))
+                    else -> showToast("Terjadi kesalahan saat memeriksa status kehadiran.")
+                }
+                finish()
+            }
         }
-        finish()
     }
 
     private fun redirectToSettings() {
-        Log.w("SplashActivity", "Mengarahkan pengguna ke pengaturan aplikasi")
         showToast("Tolong berikan semua izin untuk aplikasi")
         startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
             data = Uri.parse("package:$packageName")
