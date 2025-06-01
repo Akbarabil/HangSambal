@@ -12,24 +12,32 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-class RouteViewModel : ViewModel() {
-    val shopList = MutableLiveData<List<GetShopData>?>()
+class RouteViewModel : BaseViewModel() {
 
-    fun fetchNearbyShops(context: Context, lat: String, lng: String) {
+    fun getTop5RecommendedShops(context: Context, latitude: String, longitude: String, page: Int = 1, onResult: (List<GetShopData>) -> Unit) {
         NetworkClient().getService(context)
-            .getShopRecommendation(Prefs(context).jwt.toString(), lat, lng, "1")
+            .getShopRecommendation(
+                Prefs(context).jwt.toString(),
+                latitude,
+                longitude,
+                page.toString()
+            )
             .enqueue(object : Callback<GetShop> {
                 override fun onResponse(call: Call<GetShop>, response: Response<GetShop>) {
                     if (response.isSuccessful) {
-                        val top5 = response.body()?.dataShop?.sortedBy {
-                            it.distanceShop?.toFloatOrNull() ?: Float.MAX_VALUE
-                        }?.take(5)
-                        shopList.postValue(top5)
+                        val shops = response.body()?.dataShop.orEmpty()
+                        val top5 = shops.take(5)
+                        onResult(top5)
+                    } else {
+                        errorMessage.value = response.body()?.statusMessage
+                            ?: "Terjadi kesalahan. Silakan coba lagi."
+                        onResult(emptyList()) // Tetap panggil callback agar tidak menggantung
                     }
                 }
 
                 override fun onFailure(call: Call<GetShop>, t: Throwable) {
-                    Log.e("RouteVM", "Failed: ${t.message}")
+                    handleFailure(t)
+                    onResult(emptyList())
                 }
             })
     }

@@ -10,53 +10,57 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.example.hangsambal.R
 import com.example.hangsambal.model.response.GetShopData
+import com.example.hangsambal.util.ItemClickListener
 
-class ShopRecommendationHomeAdapter : RecyclerView.Adapter<ShopRecommendationHomeAdapter.ViewHolder>() {
-    var shops = mutableListOf<GetShopData>()
+class ShopRecommendationAdapter(
+    private var shops: List<GetShopData>,
+    private val listener: ItemClickListener<GetShopData>
+) : RecyclerView.Adapter<ShopRecommendationAdapter.ViewHolder>() {
+
+    fun updateData(newShops: List<GetShopData>) {
+        this.shops = newShops
+        notifyDataSetChanged()
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_toko_horizontal, parent, false)
+            .inflate(R.layout.item_recommendation, parent, false)
         return ViewHolder(view)
     }
 
-    override fun getItemViewType(position: Int): Int {
-        return position
-    }
-
-    override fun getItemId(position: Int): Long {
-        return position.toLong()
-    }
-
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val shop = shops[position]
+
         Glide.with(holder.itemView.context)
-            .load(shops[position].photoShop)
+            .load(shop.photoShop)
             .placeholder(R.drawable.ic_no_image)
             .error(R.drawable.ic_no_image)
             .diskCacheStrategy(DiskCacheStrategy.ALL)
             .into(holder.imageViewToko)
 
-        holder.textViewNamaToko.text = shops[position].nameShop
+        holder.textViewNamaToko.text = shop.nameShop
+        holder.textViewAlamatToko.text = shop.detlocShop
 
-        var distance = Math.round(shops[position].distanceShop.toString().toFloat())
-        if (distance > 1000) {
-            distance /= 1000
-            holder.textViewJarakToko.text = "$distance km"
-        } else {
-            holder.textViewJarakToko.text = "$distance m"
+        shop.distanceShop?.toFloatOrNull()?.let { distance ->
+            if (distance > 1000) {
+                holder.textViewJarakToko.text = "${(distance / 1000).toInt()} km"
+            } else {
+                holder.textViewJarakToko.text = "${distance.toInt()} m"
+            }
+            holder.textViewJarakToko.visibility = View.VISIBLE
+        } ?: run {
+            holder.textViewJarakToko.visibility = View.GONE
         }
 
-        holder.textViewAlamatToko.text = shops[position].detlocShop
+        holder.itemView.setOnClickListener { listener.onClickItem(shop) }
     }
 
-    override fun getItemCount(): Int {
-        return if (shops.size > 5) 5 else shops.size
-    }
+    override fun getItemCount() = shops.size
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val imageViewToko = itemView.findViewById<ImageView>(R.id.imageViewToko)
-        val textViewNamaToko = itemView.findViewById<TextView>(R.id.textViewNamaToko)
-        val textViewJarakToko = itemView.findViewById<TextView>(R.id.textViewJarakToko)
-        val textViewAlamatToko = itemView.findViewById<TextView>(R.id.textViewAlamatToko)
+        val imageViewToko: ImageView = itemView.findViewById(R.id.imageViewToko)
+        val textViewNamaToko: TextView = itemView.findViewById(R.id.textViewNamaToko)
+        val textViewAlamatToko: TextView = itemView.findViewById(R.id.textViewAlamatToko)
+        val textViewJarakToko: TextView = itemView.findViewById(R.id.textViewJarakToko)
     }
 }

@@ -5,9 +5,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,12 +12,17 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.hangsambal.R
-import com.example.hangsambal.adapter.TokoAdapter
-import com.example.hangsambal.adapter.TokoModel
+import com.example.hangsambal.adapter.ShopRecommendationAdapter
 import com.example.hangsambal.databinding.FragmentRouteBinding
+import com.example.hangsambal.model.response.GetShopData
+import com.example.hangsambal.util.ItemClickListener
+import com.example.hangsambal.util.KeyIntent
 import com.example.hangsambal.view.activity.MerchantDataActivity
+import com.example.hangsambal.view.activity.SpreadingActivity
+import com.example.hangsambal.viewmodel.RouteViewModel
 import com.mapbox.api.directions.v5.DirectionsCriteria
 import com.mapbox.api.optimization.v1.MapboxOptimization
 import com.mapbox.api.optimization.v1.models.OptimizationResponse
@@ -33,9 +35,7 @@ import com.mapbox.maps.extension.style.layers.generated.lineLayer
 import com.mapbox.maps.extension.style.layers.properties.generated.LineCap
 import com.mapbox.maps.extension.style.layers.properties.generated.LineJoin
 import com.mapbox.maps.extension.style.sources.addSource
-import com.mapbox.maps.extension.style.sources.generated.GeoJsonSource
 import com.mapbox.maps.extension.style.sources.generated.geoJsonSource
-import com.mapbox.maps.extension.style.sources.getSourceAs
 import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationManager
 import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
@@ -44,7 +44,6 @@ import com.mapbox.maps.plugin.locationcomponent.location
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.util.Locale
 
 
 class RouteFragment : Fragment() {
@@ -56,8 +55,23 @@ class RouteFragment : Fragment() {
     private lateinit var pointAnnotationManager: PointAnnotationManager
     private var currentPoint: Point? = null
     private lateinit var currentStyle: Style
-    private var isFirstRequest = true
     private var hasCenteredCamera = false
+
+    private lateinit var viewModel: RouteViewModel
+    private lateinit var adapter: ShopRecommendationAdapter
+
+    private val listener = object : ItemClickListener<GetShopData> {
+        override fun onClickItem(item: GetShopData) {
+            val distance = item.distanceShop?.toDoubleOrNull() ?: 0.0
+            if (distance <= 15) {
+                val intent = Intent(requireContext(), SpreadingActivity::class.java)
+                intent.putExtra(KeyIntent.KEY_ID_SHOP, item.idShop)
+                startActivity(intent)
+            } else {
+                showAlertDialog("Lokasi anda terlalu jauh dari toko ini", false)
+            }
+        }
+    }
 
     private val locationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -78,6 +92,12 @@ class RouteFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        viewModel = ViewModelProvider(this)[RouteViewModel::class.java]
+
+        adapter = ShopRecommendationAdapter(emptyList(), listener)
+        binding.recyclerViewListToko.layoutManager = LinearLayoutManager(requireContext())
+        binding.recyclerViewListToko.adapter = adapter
+
         binding.mapViewRoute.mapboxMap.loadStyle(Style.MAPBOX_STREETS) { style ->
             currentStyle = style
             initLocationComponent()
@@ -86,32 +106,23 @@ class RouteFragment : Fragment() {
         }
 
         binding.refreshItem.setOnClickListener {
-            isFirstRequest = true
-            runOptimization()
+            currentPoint?.let { point ->
+                getRecommendedShops(point)
+            }
         }
 
-        binding.tambahTokoButton.setOnClickListener{
+        binding.tambahTokoButton.setOnClickListener {
             val intent = Intent(requireContext(), MerchantDataActivity::class.java)
             startActivity(intent)
         }
-
-        val dummyList = listOf(
-            TokoModel("Idim Store", "Jl. Retribution Gg v", "2 km"),
-            TokoModel("Toko Gojo", "Jl. Ulti Sampah Lord", "1.5 km"),
-            TokoModel("Toko C", "Jl. C No.3", "4.3 km"),
-            TokoModel("Toko D", "Jl. D No.4", "5.6 km"),
-            TokoModel("Toko E", "Jl. E No.5", "3.1 km")
-        )
-
-        binding.recyclerViewListToko.layoutManager = LinearLayoutManager(requireContext())
-        binding.recyclerViewListToko.adapter = TokoAdapter(dummyList)
     }
 
     private fun requestLocationPermission() {
         if (ContextCompat.checkSelfPermission(
                 requireContext(),
                 Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
+            )
+            == PackageManager.PERMISSION_GRANTED
         ) {
             enableUserLocation()
         } else {
@@ -128,49 +139,39 @@ class RouteFragment : Fragment() {
     }
 
     private fun initAnnotationManager() {
-        val annotationPlugin = binding.mapViewRoute.annotations
-        pointAnnotationManager = annotationPlugin.createPointAnnotationManager()
+        pointAnnotationManager = binding.mapViewRoute.annotations.createPointAnnotationManager()
     }
 
     private fun enableUserLocation() {
         locationPlugin.addOnIndicatorPositionChangedListener { point ->
             currentPoint = point
-            // Hanya pusatkan kamera sekali saat pertama kali lokasi didapat
             if (!hasCenteredCamera) {
                 binding.mapViewRoute.mapboxMap.setCamera(
-                    CameraOptions.Builder()
-                        .center(point)
-                        .zoom(14.0)
-                        .build()
+                    CameraOptions.Builder().center(point).zoom(14.0).build()
                 )
                 hasCenteredCamera = true
-            }
-            if (isFirstRequest) {
-                runOptimization()
+                getRecommendedShops(point)
             }
         }
     }
 
-    private fun generateDummyPoints(): List<Point> {
-        return listOf(
-            Point.fromLngLat(112.608865, -7.965903),
-            Point.fromLngLat(112.608138, -7.968654),
-            Point.fromLngLat(112.605828, -7.966417),
-            Point.fromLngLat(112.602761, -7.964446)
-        )
+    private fun getRecommendedShops(userPoint: Point) {
+        val lat = userPoint.latitude().toString()
+        val lon = userPoint.longitude().toString()
+
+        viewModel.getTop5RecommendedShops(requireContext(), lat, lon) { shops ->
+            adapter.updateData(shops)
+            runOptimization(listOf(userPoint) + shops.mapNotNull {
+                if (!it.latShop.isNullOrEmpty() && !it.longShop.isNullOrEmpty()) {
+                    Point.fromLngLat(it.longShop.toDouble(), it.latShop.toDouble())
+                } else null
+            })
+        }
     }
 
-    private fun runOptimization() {
-        Toast.makeText(requireContext(), "Mengirim permintaan optimasi...", Toast.LENGTH_SHORT)
-            .show()
-        val origin = currentPoint ?: return
-        val waypoints = mutableListOf<Point>().apply {
-            add(origin)
-            addAll(generateDummyPoints())
-        }
-
+    private fun runOptimization(points: List<Point>) {
         val client = MapboxOptimization.builder()
-            .coordinates(waypoints)
+            .coordinates(points)
             .profile(DirectionsCriteria.PROFILE_DRIVING)
             .accessToken(getString(R.string.mapbox_access_token))
             .source("first")
@@ -184,72 +185,53 @@ class RouteFragment : Fragment() {
                 response: Response<OptimizationResponse>
             ) {
                 if (response.isSuccessful && response.body()?.trips()?.isNotEmpty() == true) {
-                    val route = response.body()!!.trips()!![0]
-                    drawRoute(route.geometry()!!)
 
-                    // ✅ Menampilkan total jarak dan durasi
-                    val distanceKm = (route.distance() ?: 0.0) / 1000
-                    val jarak = String.format(Locale.US, "%.2f", distanceKm)
-
-                    binding.distanceTextView.text = "Jarak: $jarak km"
-                    isFirstRequest = false // Reset flag setelah request selesai
-                } else {
-                    Log.e("Mapbox", "Optimisasi gagal: ${response.message()}")
+                    val trip = response.body()!!.trips()!![0]
+                    val geometry = response.body()!!.trips()!![0].geometry()
+                    val totalDistanceMeters = trip?.distance() ?: 0.0
+                    val totalDistanceKm = totalDistanceMeters / 1000
+                    binding.distanceTextView.text = String.format("Total jarak: %.2f km", totalDistanceKm)
+                    if (geometry != null) {
+                        drawRoute(geometry)
+                    }
                 }
             }
 
             override fun onFailure(call: Call<OptimizationResponse>, t: Throwable) {
-                Log.e("Mapbox", "Error: ${t.localizedMessage}")
+                Toast.makeText(
+                    requireContext(),
+                    "Gagal optimasi: ${t.localizedMessage}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         })
     }
 
     private fun drawRoute(geometry: String) {
         val coordinates = LineString.fromPolyline(geometry, 6).coordinates()
-        if (coordinates.isEmpty()) return
-
-        val sourceId = "optimized-route-source"
-        val layerId = "optimized-route-layer"
-        val routePoints = mutableListOf<Point>()
+        val sourceId = "route-source"
+        val layerId = "route-layer"
 
         currentStyle.removeStyleLayer(layerId)
         currentStyle.removeStyleSource(sourceId)
 
-        val animatedSource = geoJsonSource(sourceId) {
-            geometry(LineString.fromLngLats(routePoints))
+        val geoJsonSource = geoJsonSource(sourceId) {
+            geometry(LineString.fromLngLats(coordinates))
         }
-        currentStyle.addSource(animatedSource)
+        currentStyle.addSource(geoJsonSource)
 
         val lineLayer = lineLayer(layerId, sourceId) {
             lineColor(Color.BLUE)
             lineWidth(5.0)
             lineCap(LineCap.ROUND)
             lineJoin(LineJoin.ROUND)
-            lineOpacity(0.9)
         }
         currentStyle.addLayer(lineLayer)
-
-        val handler = Handler(Looper.getMainLooper())
-        var index = 0
-        val runnable = object : Runnable {
-            override fun run() {
-                if (index < coordinates.size) {
-                    routePoints.add(coordinates[index])
-                    currentStyle.getSourceAs<GeoJsonSource>(sourceId)?.geometry(
-                        LineString.fromLngLats(routePoints)
-                    )
-                    index++
-                    handler.postDelayed(this, 700)
-                } else {
-                    // Animasi selesai
-                    Toast.makeText(requireContext(), "Optimisasi berhasil", Toast.LENGTH_SHORT)
-                        .show()
-                }
-            }
-        }
-        handler.post(runnable)
     }
 
+    private fun showAlertDialog(message: String, success: Boolean) {
+        Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
+    }
 
     override fun onDestroyView() {
         super.onDestroyView()
