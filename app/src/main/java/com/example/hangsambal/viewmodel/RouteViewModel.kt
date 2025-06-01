@@ -1,36 +1,36 @@
 package com.example.hangsambal.viewmodel
 
-import androidx.lifecycle.LiveData
+import android.content.Context
+import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.example.hangsambal.model.request.OptimizationRequest
-import com.example.hangsambal.model.response.OptimizationResponse
-import com.example.hangsambal.network.Retrofit
-import kotlinx.coroutines.launch
-import okhttp3.Route
+import com.example.hangsambal.model.response.GetShop
+import com.example.hangsambal.model.response.GetShopData
+import com.example.hangsambal.network.NetworkClient
+import com.example.hangsambal.util.Prefs
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
 class RouteViewModel : ViewModel() {
+    val shopList = MutableLiveData<List<GetShopData>?>()
 
-    private val _optimizedRoute = MutableLiveData<List<Route>>()
-    val optimizedRoute: LiveData<List<Route>> = _optimizedRoute
+    fun fetchNearbyShops(context: Context, lat: String, lng: String) {
+        NetworkClient().getService(context)
+            .getShopRecommendation(Prefs(context).jwt.toString(), lat, lng, "1")
+            .enqueue(object : Callback<GetShop> {
+                override fun onResponse(call: Call<GetShop>, response: Response<GetShop>) {
+                    if (response.isSuccessful) {
+                        val top5 = response.body()?.dataShop?.sortedBy {
+                            it.distanceShop?.toFloatOrNull() ?: Float.MAX_VALUE
+                        }?.take(5)
+                        shopList.postValue(top5)
+                    }
+                }
 
-    private val _errorMessage = MutableLiveData<String?>()
-    val errorMessage: LiveData<String?> = _errorMessage
-
-//    fun getOptimizedRoute(request: OptimizationRequest) {
-//        viewModelScope.launch {
-//            try {
-//                val response = Retrofit.api.getOptimizedRoute(request)
-//                _optimizedRoute.value = response.routes
-//                _errorMessage.value = null  // clear previous error
-//            } catch (e: Exception) {
-//                _errorMessage.value = "Gagal mengambil rute: ${e.message}"
-//                e.printStackTrace()
-//            }
-//        }
-//    }
+                override fun onFailure(call: Call<GetShop>, t: Throwable) {
+                    Log.e("RouteVM", "Failed: ${t.message}")
+                }
+            })
+    }
 }

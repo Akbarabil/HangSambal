@@ -20,18 +20,29 @@
         android:layout_marginTop="5dp">
 
         <Button
-            android:id="@+id/refreshButton"
+            android:id="@+id/tambahTokoButton"
             android:layout_marginTop="5dp"
+            android:layout_marginLeft="5dp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Refresh" />
+            android:text="Tambah Toko" />
+
+        <ImageView
+            android:id="@+id/refresh_item"
+            android:layout_width="30dp"
+            android:layout_height="wrap_content"
+            android:adjustViewBounds="true"
+            android:layout_gravity="center"
+            android:src="@drawable/ic_refresh"
+            android:layout_marginLeft="5dp"/>
+
 
         <TextView
             android:id="@+id/distanceTextView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Total Jarak: "
-            android:layout_marginLeft="16dp"
+            android:layout_marginLeft="10dp"
             android:textSize="16sp"
             android:textStyle="bold" />
 

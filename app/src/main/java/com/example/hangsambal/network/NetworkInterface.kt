@@ -10,6 +10,7 @@ import com.example.hangsambal.model.response.GetPresence
 import com.example.hangsambal.model.response.GetProduct
 import com.example.hangsambal.model.response.GetShop
 import com.example.hangsambal.model.response.PostPresence
+import com.example.hangsambal.model.response.PostShop
 import com.example.hangsambal.model.response.SignIn
 import okhttp3.MultipartBody
 import retrofit2.Call
@@ -87,4 +88,21 @@ interface NetworkInterface {
     fun getDashboardV2(
         @Header("Authorization") token: String
     ): Call<GetDashboardV2>
+
+    @POST("shop")
+    @Multipart
+    fun postShop(
+        @Header("Authorization") token: String,
+        @Part("id_district") idDistrict: String,
+        @Part("name_shop") nameShop: String,
+        @Part("owner_shop") ownerShop: String,
+        @Part("isinside_market") isInsideMarket: String,
+        @Part("type_shop") typeShop: String,
+        @Part("detloc_shop") detLocShop: String,
+        @Part("telp_shop") telpShop: String,
+        @Part("lat_shop") latShop: String,
+        @Part("long_shop") longShop: String,
+        @Part("kecamatan") kecamatan: String,
+        @Part photoSHop: MultipartBody.Part,
+    ): Call<PostShop>
 }

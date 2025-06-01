@@ -1,6 +1,7 @@
 package com.example.hangsambal.view.fragment
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Bundle
@@ -19,6 +20,7 @@ import com.example.hangsambal.R
 import com.example.hangsambal.adapter.TokoAdapter
 import com.example.hangsambal.adapter.TokoModel
 import com.example.hangsambal.databinding.FragmentRouteBinding
+import com.example.hangsambal.view.activity.MerchantDataActivity
 import com.mapbox.api.directions.v5.DirectionsCriteria
 import com.mapbox.api.optimization.v1.MapboxOptimization
 import com.mapbox.api.optimization.v1.models.OptimizationResponse
@@ -83,9 +85,14 @@ class RouteFragment : Fragment() {
             requestLocationPermission()
         }
 
-        binding.refreshButton.setOnClickListener {
+        binding.refreshItem.setOnClickListener {
             isFirstRequest = true
             runOptimization()
+        }
+
+        binding.tambahTokoButton.setOnClickListener{
+            val intent = Intent(requireContext(), MerchantDataActivity::class.java)
+            startActivity(intent)
         }
 
         val dummyList = listOf(

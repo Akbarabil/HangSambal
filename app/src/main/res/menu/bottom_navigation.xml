@@ -3,19 +3,17 @@
     <item
         android:id="@+id/item_beranda"
         android:icon="@drawable/ic_beranda_logo"
-        android:title="beranda" />
+        android:title="Beranda" />
     <item
         android:id="@+id/rekomendasi"
         android:icon="@drawable/ic_rekomendasi_logo"
-        android:title="rekomendasi" />
+        android:title="Rekomendasi" />
     <item
         android:id="@+id/history"
         android:icon="@drawable/ic_nav_riwayat"
-        android:title="tambah toko" />
+        android:title="Riwayat" />
     <item
         android:id="@+id/profil"
         android:icon="@drawable/ic_profil_logo"
-        android:title="profil" />
-
-
+        android:title="Profil" />
 </menu>

@@ -50,7 +50,7 @@ class ShopRecommendationHomeAdapter : RecyclerView.Adapter<ShopRecommendationHom
     }
 
     override fun getItemCount(): Int {
-        return shops.size
+        return if (shops.size > 5) 5 else shops.size
     }
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {

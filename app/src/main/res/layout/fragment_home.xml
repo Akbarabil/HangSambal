@@ -174,7 +174,7 @@
                         android:layout_marginTop="8dp"
                         android:gravity="center"
                         android:orientation="vertical"
-                        android:visibility="visible">
+                        android:visibility="gone">
 
                         <ImageView
                             android:layout_width="80dp"
@@ -201,7 +201,7 @@
                         android:overScrollMode="never"
                         tools:listitem="@layout/item_recommendation"
                         tools:itemCount="1"
-                        android:visibility="visible"/>
+                        android:visibility="gone"/>
 
                     <com.facebook.shimmer.ShimmerFrameLayout
                         android:id="@+id/shimmerFrameLayoutStock"
@@ -209,7 +209,7 @@
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
                         app:duration="800"
-                        android:visibility="gone">
+                        android:visibility="visible">
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -252,7 +252,7 @@
                         android:layout_marginTop="8dp"
                         android:gravity="center"
                         android:orientation="vertical"
-                        android:visibility="visible">
+                        android:visibility="gone">
 
                         <ImageView
                             android:layout_width="80dp"
@@ -278,7 +278,7 @@
                         android:overScrollMode="never"
                         tools:listitem="@layout/item_recommendation"
                         tools:itemCount="1"
-                        android:visibility="visible"/>
+                        android:visibility="gone"/>
 
                     <com.facebook.shimmer.ShimmerFrameLayout
                         android:id="@+id/shimmerFrameLayoutListToko"
@@ -286,7 +286,7 @@
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
                         app:duration="800"
-                        android:visibility="gone">
+                        android:visibility="visible">
 
                         <LinearLayout
                             android:layout_width="match_parent"

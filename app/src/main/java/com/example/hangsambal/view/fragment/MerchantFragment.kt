@@ -2,11 +2,10 @@ package com.example.hangsambal.view.fragment
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import com.example.hangsambal.R
+import androidx.fragment.app.Fragment
 import com.example.hangsambal.databinding.FragmentMerchantBinding
 import com.example.hangsambal.view.activity.MerchantDataActivity
 
