@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -45,7 +46,6 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 
-
 class RouteFragment : Fragment() {
 
     private var _binding: FragmentRouteBinding? = null
@@ -63,7 +63,7 @@ class RouteFragment : Fragment() {
     private val listener = object : ItemClickListener<GetShopData> {
         override fun onClickItem(item: GetShopData) {
             val distance = item.distanceShop?.toDoubleOrNull() ?: 0.0
-            if (distance <= 15) {
+            if (distance <= 20) {
                 val intent = Intent(requireContext(), SpreadingActivity::class.java)
                 intent.putExtra(KeyIntent.KEY_ID_SHOP, item.idShop)
                 startActivity(intent)
@@ -121,8 +121,7 @@ class RouteFragment : Fragment() {
         if (ContextCompat.checkSelfPermission(
                 requireContext(),
                 Manifest.permission.ACCESS_FINE_LOCATION
-            )
-            == PackageManager.PERMISSION_GRANTED
+            ) == PackageManager.PERMISSION_GRANTED
         ) {
             enableUserLocation()
         } else {
@@ -161,11 +160,20 @@ class RouteFragment : Fragment() {
 
         viewModel.getTop5RecommendedShops(requireContext(), lat, lon) { shops ->
             adapter.updateData(shops)
-            runOptimization(listOf(userPoint) + shops.mapNotNull {
+
+            val routePoints = listOf(userPoint) + shops.mapNotNull {
                 if (!it.latShop.isNullOrEmpty() && !it.longShop.isNullOrEmpty()) {
                     Point.fromLngLat(it.longShop.toDouble(), it.latShop.toDouble())
                 } else null
-            })
+            }
+
+            // ✅ Log koordinat ke Logcat
+            routePoints.forEachIndexed { index, point ->
+                Log.d("RouteDebug", "Point #$index: Lat=${point.latitude()}, Lng=${point.longitude()}")
+            }
+
+            // 🚫 Matikan sementara pemanggilan API Optimization
+            // runOptimization(routePoints)
         }
     }
 
@@ -185,12 +193,12 @@ class RouteFragment : Fragment() {
                 response: Response<OptimizationResponse>
             ) {
                 if (response.isSuccessful && response.body()?.trips()?.isNotEmpty() == true) {
-
                     val trip = response.body()!!.trips()!![0]
-                    val geometry = response.body()!!.trips()!![0].geometry()
-                    val totalDistanceMeters = trip?.distance() ?: 0.0
+                    val geometry = trip.geometry()
+                    val totalDistanceMeters = trip.distance() ?: 0.0
                     val totalDistanceKm = totalDistanceMeters / 1000
                     binding.distanceTextView.text = String.format("Total jarak: %.2f km", totalDistanceKm)
+
                     if (geometry != null) {
                         drawRoute(geometry)
                     }
@@ -238,11 +246,3 @@ class RouteFragment : Fragment() {
         _binding = null
     }
 }
-
-
-
-
-
-
-
-

@@ -29,11 +29,11 @@
 
             <TextView
                 android:id="@+id/textViewNama"
-                style="@style/PoppinsSemiboldArsenicText3"
+                style="@style/PoppinsSemiboldArsenicText4"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"
-                tools:text="Sherrie Katrina" />
+                tools:text="Babol Sitohang" />
 
         </LinearLayout>
 
@@ -46,21 +46,21 @@
             android:background="@color/white">
 
             <TextView
-                style="@style/PoppinsSemiboldArsenicText2"
+                style="@style/PoppinsSemiboldArsenicText4"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Nama Lengkap" />
 
             <TextView
                 android:id="@+id/textViewNamaLengkap"
-                style="@style/PoppinsRegularArsenicText1"
+                style="@style/PoppinsRegularArsenicText3"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dp"
-                tools:text="Sherrie Katrina" />
+                tools:text="Babol Sitohang" />
 
             <TextView
-                style="@style/PoppinsSemiboldArsenicText2"
+                style="@style/PoppinsSemiboldArsenicText4"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="15dp"
@@ -68,14 +68,14 @@
 
             <TextView
                 android:id="@+id/textViewKTP"
-                style="@style/PoppinsRegularArsenicText1"
+                style="@style/PoppinsRegularArsenicText3"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dp"
-                tools:text="351xxxxxxxx" />
+                tools:text="35472212224446" />
 
             <TextView
-                style="@style/PoppinsSemiboldArsenicText2"
+                style="@style/PoppinsSemiboldArsenicText4"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="15dp"
@@ -83,14 +83,14 @@
 
             <TextView
                 android:id="@+id/textViewHP"
-                style="@style/PoppinsRegularArsenicText1"
+                style="@style/PoppinsRegularArsenicText3"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dp"
                 tools:text="081235698741" />
 
             <TextView
-                style="@style/PoppinsSemiboldArsenicText2"
+                style="@style/PoppinsSemiboldArsenicText4"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="15dp"
@@ -98,11 +98,11 @@
 
             <TextView
                 android:id="@+id/textViewEmail"
-                style="@style/PoppinsRegularArsenicText1"
+                style="@style/PoppinsRegularArsenicText3"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="5dp"
-                tools:text="sherrie.kat@finna.com" />
+                tools:text="babol@hang.com" />
 
 
             <com.google.android.material.button.MaterialButton

@@ -1,6 +1,7 @@
 package com.example.hangsambal.network
 
 import com.example.hangsambal.model.request.PostPickup
+import com.example.hangsambal.model.request.PostTransaction
 import com.example.hangsambal.model.response.Base
 import com.example.hangsambal.model.response.GetCekPickupFaktur
 import com.example.hangsambal.model.response.GetDashboardV2
@@ -105,4 +106,19 @@ interface NetworkInterface {
         @Part("kecamatan") kecamatan: String,
         @Part photoSHop: MultipartBody.Part,
     ): Call<PostShop>
+
+    @POST("transaction")
+    fun postTransaction(
+        @Header("Authorization") token: String,
+        @Body postTransaction: PostTransaction
+    ): Call<com.example.hangsambal.model.response.PostTransaction>
+
+    @POST("transactionimage")
+    @Multipart
+    fun postImageSpreading(
+        @Header("Authorization") token: String,
+        @Part("id_trans") idTrans: String,
+        @Part imageDisplay: MultipartBody.Part,
+        @Part imageLapak: MultipartBody.Part
+    ): Call<com.example.hangsambal.model.response.PostTransaction>
 }
