@@ -113,10 +113,6 @@ class PresenceActivity : AppCompatActivity(), LocationListener {
             intent.getStringExtra(KeyIntent.KEY_JWT).toString()
         }
 
-        Log.d("JWT_TOKEN", jwt)
-
-
-
         // Inisialisasi lokasi
         locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
@@ -169,12 +165,10 @@ class PresenceActivity : AppCompatActivity(), LocationListener {
             }
         }
 
-        // Tombol simpan ditekan (untuk kirim presensi)
         binding.materialButtonSimpan.setOnClickListener {
             if (photoPresence == null) {
                 showAlertDialog("Mohon ambil foto terlebih dahulu")
             } else {
-                // Pastikan ada koneksi internet sebelum kirim data
                 InternetUtils.checkInternetBeforeAction(this) {
                     binding.materialButtonSimpan.isEnabled = false
                     val isMock = if (isFakeGPS) 1 else 0
@@ -219,7 +213,6 @@ class PresenceActivity : AppCompatActivity(), LocationListener {
             }
         }
 
-        // Pantau state saat pengiriman presensi
         viewModel.statePresence.observe(this) { state ->
             when (state) {
                 State.COMPLETE -> {

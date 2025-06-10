@@ -6,13 +6,15 @@ import com.example.hangsambal.model.response.Base
 import com.example.hangsambal.model.response.GetCekPickupFaktur
 import com.example.hangsambal.model.response.GetDashboardV2
 import com.example.hangsambal.model.response.GetHistory
+import com.example.hangsambal.model.response.GetHistoryDetail
 import com.example.hangsambal.model.response.GetPickup
 import com.example.hangsambal.model.response.GetPresence
 import com.example.hangsambal.model.response.GetProduct
 import com.example.hangsambal.model.response.GetShop
+import com.example.hangsambal.model.response.LogIn
 import com.example.hangsambal.model.response.PostPresence
 import com.example.hangsambal.model.response.PostShop
-import com.example.hangsambal.model.response.SignIn
+
 import okhttp3.MultipartBody
 import retrofit2.Call
 import retrofit2.http.*
@@ -20,10 +22,10 @@ import retrofit2.http.*
 interface NetworkInterface {
     @POST("auth/login")
     @FormUrlEncoded
-    fun signIn(
+    fun logIn(
         @Field("username") username: String,
         @Field("password") password: String
-    ): Call<SignIn>
+    ): Call<LogIn>
 
     @GET("presence/detail")
     fun getPresence(
@@ -63,6 +65,12 @@ interface NetworkInterface {
         @Query("page") page: String,
         @Query("tanggal") tanggal: String,
     ): Call<GetHistory>
+
+    @GET("transaction/detail")
+    fun getHistoryDetail(
+        @Header("Authorization") token: String,
+        @Query("id_trans") page: String
+    ): Call<GetHistoryDetail>
 
     @GET("pickup")
     fun getPickup(

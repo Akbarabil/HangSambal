@@ -17,17 +17,27 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.hangsambal.R
 import com.example.hangsambal.adapter.HistoryAdapter
 import com.example.hangsambal.databinding.FragmentHistoryBinding
+import com.example.hangsambal.model.response.GetHistoryData
+import com.example.hangsambal.util.ItemClickListener
 import com.example.hangsambal.util.KeyIntent
+import com.example.hangsambal.view.activity.DetailVisitActivity
 import com.example.hangsambal.viewmodel.HistoryViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 
 class HistoryFragment : Fragment(), DatePickerDialog.OnDateSetListener {
+    private val listener = object : ItemClickListener<GetHistoryData> {
+        override fun onClickItem(item: GetHistoryData) {
+            val intent = Intent(requireContext(), DetailVisitActivity::class.java)
+            intent.putExtra(KeyIntent.KEY_ID_TRANSACTION, item.idTrans)
+            startActivity(intent)
+        }
+    }
 
     private lateinit var binding: FragmentHistoryBinding
     private lateinit var viewModel: HistoryViewModel
-    private var adapter: HistoryAdapter = HistoryAdapter()
+    private var adapter: HistoryAdapter = HistoryAdapter(listener)
     private lateinit var datePickerDialog: DatePickerDialog
 
     private var page: Int = 1
@@ -38,12 +48,12 @@ class HistoryFragment : Fragment(), DatePickerDialog.OnDateSetListener {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
+        // Inflate the layout for this fragment
         binding = FragmentHistoryBinding.inflate(inflater, container, false)
 
         viewModel = ViewModelProvider(this).get(HistoryViewModel::class.java)
 
-        datePickerDialog = DatePickerDialog(requireContext(), this, Calendar.getInstance().get(
-            Calendar.YEAR), Calendar.getInstance().get(
+        datePickerDialog = DatePickerDialog(requireContext(), this, Calendar.getInstance().get(Calendar.YEAR), Calendar.getInstance().get(
             Calendar.MONTH), Calendar.getInstance().get(Calendar.DAY_OF_MONTH))
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             datePickerDialog.setOnDateSetListener(this)
@@ -71,6 +81,9 @@ class HistoryFragment : Fragment(), DatePickerDialog.OnDateSetListener {
             getHistoryList(page, tanggal)
         }
 
+        //viewModel.totalPage.observe(requireActivity()) {
+        //                totalPage = it.toInt()
+        //            }
         viewModel.totalPage.observe(requireActivity()) {
             if (it != null) {
                 totalPage = it.toInt()
@@ -130,6 +143,7 @@ class HistoryFragment : Fragment(), DatePickerDialog.OnDateSetListener {
                 showAlertDialog(it.toString())
             }
         }
+
 
         return binding.root
     }

@@ -7,8 +7,9 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.hangsambal.R
 import com.example.hangsambal.model.response.GetHistoryData
+import com.example.hangsambal.util.ItemClickListener
 
-class HistoryAdapter : RecyclerView.Adapter<HistoryAdapter.ViewHolder>() {
+class HistoryAdapter(private var listener: ItemClickListener<GetHistoryData>) : RecyclerView.Adapter<HistoryAdapter.ViewHolder>(){
 
     var history = mutableListOf<GetHistoryData>()
 
@@ -18,27 +19,34 @@ class HistoryAdapter : RecyclerView.Adapter<HistoryAdapter.ViewHolder>() {
         return ViewHolder(view)
     }
 
-    override fun getItemViewType(position: Int): Int = position
-
-    override fun getItemId(position: Int): Long = position.toLong()
-
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val data = history[position]
-        holder.textViewNama.text = data.nama?.toUpperCase()
-        val splitDateTime = data.dateTrans?.split(" ") ?: listOf("")
-        val splitDate = splitDateTime.first().split("-")
-        if (splitDate.size == 3) {
-            holder.textViewTanggal.text = "${splitDate[2]} ${getMonthName(splitDate[1].toInt())} ${splitDate[0]}"
-        }
-        holder.textViewJumlahProduk.text = "${data.jmlQtyProduct} Produk"
+    override fun getItemViewType(position: Int): Int {
+        return position
     }
 
-    override fun getItemCount(): Int = history.size
+    override fun getItemId(position: Int): Long {
+        return position.toLong()
+    }
 
-    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val textViewNama: TextView = itemView.findViewById(R.id.textViewNama)
-        val textViewTanggal: TextView = itemView.findViewById(R.id.textViewTanggal)
-        val textViewJumlahProduk: TextView = itemView.findViewById(R.id.textViewJumlahProduk)
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.textViewNama.text = history[position].nama.toString().toUpperCase()
+        val splitDateTime = history[position].dateTrans.toString().split(" ")
+        val splitDate = splitDateTime.first().split("-")
+        holder.textViewTanggal.text = "${splitDate[2]} ${getMonthName(splitDate[1].toInt())} ${splitDate[0]}"
+        holder.textViewJumlahProduk.text = history[position].jmlQtyProduct.toString() + " Produk"
+
+        holder.itemView.setOnClickListener {
+            listener.onClickItem(history[position])
+        }
+    }
+
+    override fun getItemCount(): Int {
+        return history.size
+    }
+
+    class ViewHolder(ItemView: View) : RecyclerView.ViewHolder(ItemView) {
+        val textViewNama = ItemView.findViewById<View>(R.id.textViewNama) as TextView
+        val textViewTanggal = ItemView.findViewById<View>(R.id.textViewTanggal) as TextView
+        val textViewJumlahProduk = ItemView.findViewById<View>(R.id.textViewJumlahProduk) as TextView
     }
 
     private fun getMonthName(month: Int): String {

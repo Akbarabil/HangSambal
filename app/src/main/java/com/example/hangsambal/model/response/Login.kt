@@ -6,13 +6,13 @@ import kotlinx.parcelize.Parcelize
 
 
 @Parcelize
-data class SignIn(
+data class LogIn(
     @SerializedName("data")
-    val dataSignIn: SignInData?
+    val dataLogIn: LogInData?
 ) : Parcelable, Base()
 
 @Parcelize
-data class SignInData(
+data class LogInData(
     @SerializedName("jwt")
     val jwt: String?
 ) : Parcelable

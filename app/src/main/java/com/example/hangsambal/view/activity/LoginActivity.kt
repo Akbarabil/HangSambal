@@ -37,7 +37,6 @@ class LoginActivity : AppCompatActivity() {
         viewModel = ViewModelProvider(this).get(LoginViewModel::class.java)
 
         binding.materialButtonLogin.setOnClickListener {
-            // Mengecek koneksi internet sebelum melakukan aksi login
             InternetUtils.checkInternetBeforeAction(this) {
 
                 // Validasi input: username dan password tidak boleh kosong
@@ -55,7 +54,7 @@ class LoginActivity : AppCompatActivity() {
                     binding.materialButtonLogin.isEnabled = false
 
                     // Memanggil fungsi signIn pada ViewModel
-                    viewModel.signIn(
+                    viewModel.logIn(
                         baseContext,
                         binding.textInputEditTextUsername.text.toString(),
                         binding.textInputEditTextPassword.text.toString()
@@ -66,7 +65,7 @@ class LoginActivity : AppCompatActivity() {
 
         viewModel.alreadyPresence.observe(this) {
             // Jika login sukses
-            if (viewModel.isSuccessSignIn.value == true) {
+            if (viewModel.isSuccessLogIn.value == true) {
                 if (it) {
                     // Jika user sudah presensi, langsung ke MainActivity
                     startActivity(Intent(baseContext, MainActivity::class.java))
