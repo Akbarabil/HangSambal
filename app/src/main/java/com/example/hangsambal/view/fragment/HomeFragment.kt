@@ -22,6 +22,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.hangsambal.R
+import com.example.hangsambal.adapter.BannerAdapter
 import com.example.hangsambal.adapter.ShopRecommendationHomeAdapter
 import com.example.hangsambal.adapter.StockHomeAdapter
 import com.example.hangsambal.databinding.FragmentHomeBinding
@@ -59,68 +60,77 @@ class HomeFragment : Fragment(), LocationListener {
 
     private var isFakeGPS: Boolean = false
 
+    // === Tambahan untuk Banner Carousel ===
+    private lateinit var bannerHandler: Handler
+    private lateinit var bannerRunnable: Runnable
+    private var currentBannerPage = 0
+    private val bannerList = listOf(
+        R.drawable.banner_satu,
+        R.drawable.banner_dua,
+        R.drawable.banner_tiga
+    )
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
-        // Inflate the layout for this fragment
+    ): View {
         binding = FragmentHomeBinding.inflate(inflater, container, false)
         viewModel = ViewModelProvider(this).get(HomeViewModel::class.java)
 
         val data = JWTUtils.decoded(Prefs(requireContext()).jwt.toString())
         binding.textViewNama.text = data.nameUser.toString()
 
-        fusedLocationProviderClient =
-            LocationServices.getFusedLocationProviderClient(requireContext())
-        locationRequest = LocationRequest()
-        locationRequest.priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-        locationRequest.interval = 5000
-        locationRequest.fastestInterval = 2000
-        locationSettingsRequestBuilder = LocationSettingsRequest.Builder()
-        locationSettingsRequestBuilder.addLocationRequest(locationRequest)
+        // === Inisialisasi Banner ViewPager ===
+        binding.bannerViewPager.adapter = BannerAdapter(bannerList)
+
+        bannerHandler = Handler(Looper.getMainLooper())
+        bannerRunnable = object : Runnable {
+            override fun run() {
+                currentBannerPage = (currentBannerPage + 1) % bannerList.size
+                binding.bannerViewPager.setCurrentItem(currentBannerPage, true)
+                bannerHandler.postDelayed(this, 5000)
+            }
+        }
+
+        // === Lokasi ===
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireContext())
+        locationRequest = LocationRequest().apply {
+            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+            interval = 5000
+            fastestInterval = 2000
+        }
+        locationSettingsRequestBuilder = LocationSettingsRequest.Builder().addLocationRequest(locationRequest)
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(p0: LocationResult) {
-                if (p0.lastLocation != null) {
-                    getGeocoder(p0.lastLocation!!)
-                } else {
-                    Toast.makeText(
-                        requireContext(),
-                        "Tidak dapat mendapatkan lokasi, silahkan coba lagi",
-                        Toast.LENGTH_SHORT
-                    )
+                p0.lastLocation?.let {
+                    getGeocoder(it)
+                } ?: run {
+                    Toast.makeText(requireContext(), "Tidak dapat mendapatkan lokasi, silahkan coba lagi", Toast.LENGTH_SHORT).show()
                 }
             }
         }
-        locationManager =
-            requireActivity().getSystemService(AppCompatActivity.LOCATION_SERVICE) as LocationManager
-
+        locationManager = requireActivity().getSystemService(AppCompatActivity.LOCATION_SERVICE) as LocationManager
         checkSelfPermission()
-        if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-        } else {
+
+        if (!locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
             Toast.makeText(requireContext(), "Mohon aktifkan GPS anda", Toast.LENGTH_SHORT).show()
         }
 
         viewModel.getDashboardV2(requireContext())
-
         viewModel.getCekPickup(requireContext())
 
-
         binding.recyclerViewListStock.apply {
-            layoutManager = LinearLayoutManager(this.context, LinearLayoutManager.HORIZONTAL, false)
+            layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
             adapter = productAdapter
-
-            val marginDecoration = PixelHelper.convertDpToPx(4, this.context.resources)
-            val itemSpaceDecoration = HorizontalSpaceDecoration(marginDecoration, 4)
-            addItemDecoration(itemSpaceDecoration)
+            val marginDecoration = PixelHelper.convertDpToPx(4, resources)
+            addItemDecoration(HorizontalSpaceDecoration(marginDecoration, 4))
         }
 
         binding.recyclerViewListToko.apply {
-            layoutManager = LinearLayoutManager(this.context, LinearLayoutManager.HORIZONTAL, false)
+            layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
             adapter = shopAdapter
-
-            val marginDecoration = PixelHelper.convertDpToPx(4, this.context.resources)
-            val itemSpaceDecoration = HorizontalSpaceDecoration(marginDecoration, 4)
-            addItemDecoration(itemSpaceDecoration)
+            val marginDecoration = PixelHelper.convertDpToPx(4, resources)
+            addItemDecoration(HorizontalSpaceDecoration(marginDecoration, 4))
         }
 
         viewModel.productsPickup.observe(requireActivity()) {
@@ -161,12 +171,10 @@ class HomeFragment : Fragment(), LocationListener {
             if (it == State.ERROR) {
                 binding.shimmerFrameLayoutStock.stopShimmer()
                 binding.shimmerFrameLayoutStock.visibility = View.GONE
-
                 binding.linearLayoutEmptyStock.visibility = View.VISIBLE
                 binding.recyclerViewListStock.visibility = View.GONE
-
                 viewModel.messagePickup.observe(requireActivity()) {
-                    binding.textViewMessagePickup.text = it.toString()
+                    binding.textViewMessagePickup.text = it
                 }
             }
         }
@@ -175,22 +183,17 @@ class HomeFragment : Fragment(), LocationListener {
             if (it == State.FINISH_PICKUP) {
                 binding.shimmerFrameLayoutStock.stopShimmer()
                 binding.shimmerFrameLayoutStock.visibility = View.GONE
-
                 binding.linearLayoutEmptyStock.visibility = View.VISIBLE
                 binding.recyclerViewListStock.visibility = View.GONE
-
                 viewModel.messagePickup.observe(requireActivity()) {
-                    binding.textViewMessagePickup.text = it.toString()
+                    binding.textViewMessagePickup.text = it
                 }
             }
         }
 
         viewModel.errorMessage.observe(viewLifecycleOwner) {
-            if (!it.isNullOrEmpty()) {
-                showAlertDialog(it.toString())
-            }
+            if (!it.isNullOrEmpty()) showAlertDialog(it)
         }
-
 
         binding.cardViewRoute.setOnClickListener {
             requireActivity().findViewById<BottomNavigationView>(R.id.bottom_navigation)
@@ -218,107 +221,53 @@ class HomeFragment : Fragment(), LocationListener {
             binding.linearLayoutEmpty.visibility = View.GONE
             binding.recyclerViewListToko.visibility = View.GONE
 
-            Handler().postDelayed(
-                {
-                    binding.swipeRefreshLayout.isRefreshing = false
-                }, 3000
-            )
+            Handler().postDelayed({ binding.swipeRefreshLayout.isRefreshing = false }, 3000)
         }
-
 
         return binding.root
     }
 
     private fun showAlertDialog(message: String) {
-        val builder = AlertDialog.Builder(requireContext())
-        builder.setTitle("Pesan")
-        builder.setMessage(message)
-        builder.setPositiveButton(android.R.string.yes) { dialog, which ->
-            dialog.dismiss()
-        }
-        builder.show()
+        AlertDialog.Builder(requireContext())
+            .setTitle("Pesan")
+            .setMessage(message)
+            .setPositiveButton(android.R.string.yes) { dialog, _ -> dialog.dismiss() }
+            .show()
     }
 
     private fun getShopList(page: Int) {
-        if (activity != null) {
-            if (!latitude.isNullOrEmpty() && !longitude.isNullOrEmpty()) {
-                viewModel.getShopRecommendation(
-                    requireContext(),
-                    latitude,
-                    longitude,
-                    page
-                )
-            }
+        if (activity != null && latitude.isNotEmpty() && longitude.isNotEmpty()) {
+            viewModel.getShopRecommendation(requireContext(), latitude, longitude, page)
         }
     }
 
     private fun checkSelfPermission() {
-        if ((ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED)
-        ) {
-            val permissions = mutableListOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.CAMERA,
-                Manifest.permission.READ_EXTERNAL_STORAGE,
-                Manifest.permission.WRITE_EXTERNAL_STORAGE
-            )
+        val permissions = mutableListOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.CAMERA,
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+        )
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                permissions.add(Manifest.permission.READ_MEDIA_IMAGES)
-                permissions.add(Manifest.permission.READ_MEDIA_VIDEO)
-            }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            permissions.add(Manifest.permission.READ_MEDIA_IMAGES)
+            permissions.add(Manifest.permission.READ_MEDIA_VIDEO)
+        }
 
-            ActivityCompat.requestPermissions(
-                requireActivity(),
-                permissions.toTypedArray(),
-                locationPermissionCode
-            )
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(requireActivity(), permissions.toTypedArray(), locationPermissionCode)
         }
     }
 
-
     private fun startLocationUpdates() {
-        if ((ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED)
-        ) {
-            val permissions = mutableListOf(
-                Manifest.permission.ACCESS_FINE_LOCATION,
-                Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.CAMERA
-            )
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                // Izin khusus untuk Android 13+
-                permissions.add(Manifest.permission.READ_MEDIA_IMAGES)
-                permissions.add(Manifest.permission.READ_MEDIA_VIDEO)
-            } else {
-                // Izin lama untuk Android 11–12
-                permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE)
-                permissions.add(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-            }
-
-            // Meminta izin dengan requireActivity() untuk Fragment
-            ActivityCompat.requestPermissions(
-                requireActivity(),
-                permissions.toTypedArray(),
-                locationPermissionCode
-            )
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            checkSelfPermission()
         } else {
             if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-                fusedLocationProviderClient.requestLocationUpdates(
-                    locationRequest,
-                    locationCallback,
-                    Looper.getMainLooper()
-                )
+                fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
             } else {
-                // Menggunakan requireContext() untuk Toast di Fragment
-                Toast.makeText(requireContext(), "Mohon aktifkan GPS anda", Toast.LENGTH_SHORT)
-                    .show()
+                Toast.makeText(requireContext(), "Mohon aktifkan GPS anda", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -326,15 +275,14 @@ class HomeFragment : Fragment(), LocationListener {
     private fun getGeocoder(location: Location) {
         latitude = location.latitude.toString()
         longitude = location.longitude.toString()
-
         if (isFirstLoad) {
             getShopList(page)
             isFirstLoad = false
         }
     }
 
-    override fun onLocationChanged(p0: Location) {
-        getGeocoder(p0)
+    override fun onLocationChanged(location: Location) {
+        getGeocoder(location)
     }
 
     override fun onProviderEnabled(provider: String) {
@@ -354,11 +302,18 @@ class HomeFragment : Fragment(), LocationListener {
         startLocationUpdates()
         binding.shimmerFrameLayoutListToko.startShimmer()
         binding.shimmerFrameLayoutStock.startShimmer()
+
+        // Start auto-scroll banner
+        bannerHandler.postDelayed(bannerRunnable, 3000)
     }
 
     override fun onPause() {
         binding.shimmerFrameLayoutListToko.stopShimmer()
         binding.shimmerFrameLayoutStock.stopShimmer()
+
+        // Stop auto-scroll banner
+        bannerHandler.removeCallbacks(bannerRunnable)
+
         super.onPause()
     }
 }
