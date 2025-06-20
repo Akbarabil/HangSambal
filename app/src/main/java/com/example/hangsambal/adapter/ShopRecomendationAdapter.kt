@@ -3,6 +3,7 @@ package com.example.hangsambal.adapter
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
@@ -24,7 +25,7 @@ class ShopRecommendationAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_toko_horizontal, parent, false)
+            .inflate(R.layout.item_recommendation, parent, false)
         return ViewHolder(view)
     }
 
@@ -38,7 +39,7 @@ class ShopRecommendationAdapter(
             .diskCacheStrategy(DiskCacheStrategy.ALL)
             .into(holder.imageViewToko)
 
-        holder.textViewNamaToko.text = shop.nameShop
+        holder.textViewNamaToko.text = "${position + 1}. ${shop.nameShop}"
         holder.textViewAlamatToko.text = shop.detlocShop
 
         shop.distanceShop?.toFloatOrNull()?.let { distance ->
@@ -52,7 +53,8 @@ class ShopRecommendationAdapter(
             holder.textViewJarakToko.visibility = View.GONE
         }
 
-        holder.itemView.setOnClickListener { listener.onClickItem(shop) }
+        holder.transaksiBtn.setOnClickListener { listener.onClickItem(shop) }
+        holder.mapBtn.setOnClickListener { listener.onClickMap(shop) }
     }
 
     override fun getItemCount() = shops.size
@@ -62,5 +64,7 @@ class ShopRecommendationAdapter(
         val textViewNamaToko: TextView = itemView.findViewById(R.id.textViewNamaToko)
         val textViewAlamatToko: TextView = itemView.findViewById(R.id.textViewAlamatToko)
         val textViewJarakToko: TextView = itemView.findViewById(R.id.textViewJarakToko)
+        val transaksiBtn: ImageButton = itemView.findViewById(R.id.transaksiBtn)
+        val mapBtn: ImageButton = itemView.findViewById(R.id.mapBtn)
     }
 }

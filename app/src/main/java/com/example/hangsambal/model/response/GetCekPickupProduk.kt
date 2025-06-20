@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName
 import kotlinx.parcelize.Parcelize
 
 @Parcelize
-data class GetCekPickupFaktur(
+data class GetCekPickupProduk(
     @SerializedName("status_success")
     val statusSuccess: Int?
 ) : Parcelable, Base()

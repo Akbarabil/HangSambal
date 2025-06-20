@@ -26,12 +26,20 @@ class RouteViewModel : BaseViewModel() {
                 override fun onResponse(call: Call<GetShop>, response: Response<GetShop>) {
                     if (response.isSuccessful) {
                         val shops = response.body()?.dataShop.orEmpty()
+                        Log.d("RouteViewModel", "Total shops received: ${shops.size}")
+
                         val top5 = shops.take(5)
+                        Log.d("RouteViewModel", "Top 5 recommended shops:")
+                        top5.forEachIndexed { index, shop ->
+                            Log.d("RouteViewModel", "Shop #${index + 1}: ${shop}")
+                        }
+
                         onResult(top5)
                     } else {
+                        Log.e("RouteViewModel", "Unsuccessful response: ${response.errorBody()?.string()}")
                         errorMessage.value = response.body()?.statusMessage
                             ?: "Terjadi kesalahan. Silakan coba lagi."
-                        onResult(emptyList()) // Tetap panggil callback agar tidak menggantung
+                        onResult(emptyList())
                     }
                 }
 

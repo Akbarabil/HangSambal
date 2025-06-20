@@ -245,10 +245,6 @@ class PresenceActivity : AppCompatActivity(), LocationListener {
         val sequence = MaterialShowcaseSequence(this, "SHOWCASE_PRESENCE")
         sequence.setConfig(config)
 
-        // Debugging untuk memastikan View tidak null
-        Log.d("Showcase", "textViewLokasi: ${binding.textViewLokasi}")
-        Log.d("Showcase", "imageView: ${binding.imageView}")
-
         sequence.addSequenceItem(
             MaterialShowcaseView.Builder(this)
                 .setTarget(binding.textViewLokasi)

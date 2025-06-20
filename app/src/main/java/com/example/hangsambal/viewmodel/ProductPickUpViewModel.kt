@@ -1,12 +1,11 @@
 package com.example.hangsambal.viewmodel
 
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.MutableLiveData
 import com.example.hangsambal.model.request.PostPickup
 import com.example.hangsambal.model.request.PostProductPickup
 import com.example.hangsambal.model.response.Base
-import com.example.hangsambal.model.response.GetCekPickupFaktur
+import com.example.hangsambal.model.response.GetCekPickupProduk
 import com.example.hangsambal.model.response.GetProduct
 import com.example.hangsambal.model.response.GetProductData
 import com.example.hangsambal.network.NetworkClient
@@ -24,10 +23,39 @@ class ProductPickupViewModel: BaseViewModel() {
     var products = MutableLiveData<List<GetProductData>>()
     var errorMessageCek = MutableLiveData<String>()
 
+    fun getCekPickup(context: Context) {
+        stateCekPickup.value = State.LOADING
+        NetworkClient().getService(context)
+            .getCekPickup(
+                Prefs(context).jwt.toString()
+            )
+            .enqueue(object : Callback<GetCekPickupProduk> {
+                override fun onResponse(
+                    call: Call<GetCekPickupProduk>,
+                    response: Response<GetCekPickupProduk>
+                ) {
+                    if (response.isSuccessful) {
+                        if (response.body()?.statusSuccess == 1) {
+                            stateCekPickup.value = State.COMPLETE
+                        } else {
+                            stateCekPickup.value = State.ERROR
+                            errorMessageCek.value = response.body()?.statusMessage ?: "Anda telah melakukan pickup, silahkan melakukan transaksi"
+                        }
+                    } else {
+                        stateCekPickup.value = State.ERROR
+                        errorMessage.value = response.body()?.statusMessage?: "Terjadi kesalahan. Silakan coba lagi."
+                    }
+                }
+
+                override fun onFailure(call: Call<GetCekPickupProduk>, t: Throwable) {
+                    stateCekPickup.value = State.ERROR
+                    handleFailure(t)
+                }
+            })
+    }
+
     fun getProduct(context: Context) {
         stateProduct.value = State.LOADING
-        val token = Prefs(context).jwt.toString()
-        Log.d("VIEWMODEL", "JWT token untuk getProduct: $token") // <-- Tambahkan ini
         NetworkClient().getService(context)
             .getProduct(
                 Prefs(context).jwt.toString()
@@ -51,38 +79,6 @@ class ProductPickupViewModel: BaseViewModel() {
                 override fun onFailure(call: Call<GetProduct>, t: Throwable) {
                     stateProduct.value = State.ERROR
                     errorMessage.value =  t.message.toString()
-                }
-            })
-    }
-
-
-    fun getCekPickup(context: Context) {
-        stateCekPickup.value = State.LOADING
-        NetworkClient().getService(context)
-            .getCekPickup(
-                Prefs(context).jwt.toString()
-            )
-            .enqueue(object : Callback<GetCekPickupFaktur> {
-                override fun onResponse(
-                    call: Call<GetCekPickupFaktur>,
-                    response: Response<GetCekPickupFaktur>
-                ) {
-                    if (response.isSuccessful) {
-                        if (response.body()?.statusSuccess == 1) {
-                            stateCekPickup.value = State.COMPLETE
-                        } else {
-                            stateCekPickup.value = State.ERROR
-                            errorMessageCek.value = response.body()?.statusMessage ?: "Anda telah melakukan pickup, silahkan melakukan transaksi atau faktur"
-                        }
-                    } else {
-                        stateCekPickup.value = State.ERROR
-                        errorMessage.value = response.body()?.statusMessage?: "Terjadi kesalahan. Silakan coba lagi."
-                    }
-                }
-
-                override fun onFailure(call: Call<GetCekPickupFaktur>, t: Throwable) {
-                    stateCekPickup.value = State.ERROR
-                    handleFailure(t)
                 }
             })
     }

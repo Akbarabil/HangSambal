@@ -2,7 +2,7 @@ package com.example.hangsambal.viewmodel
 
 import android.content.Context
 import androidx.lifecycle.MutableLiveData
-import com.example.hangsambal.model.response.GetCekPickupFaktur
+import com.example.hangsambal.model.response.GetCekPickupProduk
 import com.example.hangsambal.model.response.GetDashboardV2
 import com.example.hangsambal.model.response.GetDashboardV2Data
 import com.example.hangsambal.model.response.GetPickup
@@ -53,10 +53,10 @@ class HomeViewModel : BaseViewModel() {
             .getCekPickup(
                 Prefs(context).jwt.toString()
             )
-            .enqueue(object : Callback<GetCekPickupFaktur> {
+            .enqueue(object : Callback<GetCekPickupProduk> {
                 override fun onResponse(
-                    call: Call<GetCekPickupFaktur>,
-                    response: Response<GetCekPickupFaktur>
+                    call: Call<GetCekPickupProduk>,
+                    response: Response<GetCekPickupProduk>
                 ) {
                     if (response.isSuccessful) {
                         messagePickup.value = response.body()?.statusMessage
@@ -75,7 +75,7 @@ class HomeViewModel : BaseViewModel() {
                     }
                 }
 
-                override fun onFailure(call: Call<GetCekPickupFaktur>, t: Throwable) {
+                override fun onFailure(call: Call<GetCekPickupProduk>, t: Throwable) {
                     stateCekPickup.value = State.ERROR
                     handleFailure(t)
                 }

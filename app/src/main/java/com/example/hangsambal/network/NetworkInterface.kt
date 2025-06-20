@@ -3,7 +3,7 @@ package com.example.hangsambal.network
 import com.example.hangsambal.model.request.PostPickup
 import com.example.hangsambal.model.request.PostTransaction
 import com.example.hangsambal.model.response.Base
-import com.example.hangsambal.model.response.GetCekPickupFaktur
+import com.example.hangsambal.model.response.GetCekPickupProduk
 import com.example.hangsambal.model.response.GetDashboardV2
 import com.example.hangsambal.model.response.GetHistory
 import com.example.hangsambal.model.response.GetHistoryDetail
@@ -51,7 +51,7 @@ interface NetworkInterface {
     @GET("cek/pickup")
     fun getCekPickup(
         @Header("Authorization") token: String
-    ): Call<GetCekPickupFaktur>
+    ): Call<GetCekPickupProduk>
 
     @POST("pickup")
     fun postPickup(
