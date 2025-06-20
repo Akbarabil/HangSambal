@@ -29,7 +29,6 @@ import com.example.hangsambal.util.KeyIntent
 import com.example.hangsambal.view.activity.MerchantDataActivity
 import com.example.hangsambal.view.activity.SpreadingActivity
 import com.example.hangsambal.viewmodel.RouteViewModel
-import com.google.android.gms.maps.model.LatLng
 import com.google.gson.Gson
 import com.mapbox.api.directions.v5.DirectionsCriteria
 import com.mapbox.api.optimization.v1.MapboxOptimization
@@ -45,7 +44,6 @@ import com.mapbox.maps.extension.style.layers.generated.symbolLayer
 import com.mapbox.maps.extension.style.layers.properties.generated.LineCap
 import com.mapbox.maps.extension.style.layers.properties.generated.LineJoin
 import com.mapbox.maps.extension.style.layers.properties.generated.SymbolPlacement
-import com.mapbox.maps.extension.style.layers.properties.generated.TextAnchor
 import com.mapbox.maps.extension.style.sources.addSource
 import com.mapbox.maps.extension.style.sources.generated.GeoJsonSource
 import com.mapbox.maps.extension.style.sources.generated.geoJsonSource
@@ -99,7 +97,8 @@ class RouteFragment : Fragment() {
     private val locationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             if (granted) enableUserLocation()
-            else Toast.makeText(requireContext(), "Izin lokasi diperlukan", Toast.LENGTH_SHORT).show()
+            else Toast.makeText(requireContext(), "Izin lokasi diperlukan", Toast.LENGTH_SHORT)
+                .show()
         }
 
     override fun onCreateView(
@@ -109,7 +108,6 @@ class RouteFragment : Fragment() {
     ): View {
         _binding = FragmentRouteBinding.inflate(inflater, container, false)
         return binding.root
-
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -120,10 +118,9 @@ class RouteFragment : Fragment() {
         adapter = ShopRecommendationAdapter(emptyList(), listener)
         binding.recyclerViewListToko.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewListToko.adapter = adapter
+
         MaterialShowcaseView.resetSingleUse(requireContext(), "SHOWCASE_ROUTE_FRAGMENT")
-        binding.root.post {
-            showStepByStepTutorials()
-        }
+        binding.root.post { showStepByStepTutorials() }
 
         binding.mapViewRoute.mapboxMap.loadStyle(Style.MAPBOX_STREETS) { style ->
             currentStyle = style
@@ -141,6 +138,32 @@ class RouteFragment : Fragment() {
         binding.tambahTokoButton.setOnClickListener {
             val intent = Intent(requireContext(), MerchantDataActivity::class.java)
             startActivity(intent)
+        }
+
+        observeViewModel()
+    }
+
+    private fun observeViewModel() {
+        viewModel.top5Shops.observe(viewLifecycleOwner) { shops ->
+            if (currentPoint != null) {
+                originalShops = shops
+                pointAnnotationManager.deleteAll()
+                val routePoints = mutableListOf<Point>()
+                routePoints.add(currentPoint!!)
+
+                shops.forEach { shop ->
+                    if (!shop.latShop.isNullOrEmpty() && !shop.longShop.isNullOrEmpty()) {
+                        val shopPoint =
+                            Point.fromLngLat(shop.longShop.toDouble(), shop.latShop.toDouble())
+                        routePoints.add(shopPoint)
+                        createShopMarker(shopPoint, shop.nameShop ?: "Toko")
+                    }
+                }
+
+                val tokoDikirim = shops.mapNotNull { it.nameShop }
+                Log.d("RouteDebug", "Toko yang dikirim ke API Optimisasi: $tokoDikirim")
+                runOptimization(routePoints)
+            }
         }
     }
 
@@ -184,24 +207,7 @@ class RouteFragment : Fragment() {
     private fun getRecommendedShops(userPoint: Point) {
         val lat = userPoint.latitude().toString()
         val lon = userPoint.longitude().toString()
-
-        viewModel.getTop5RecommendedShops(requireContext(), lat, lon) { shops ->
-            originalShops = shops
-            pointAnnotationManager.deleteAll()
-            val routePoints = mutableListOf<Point>()
-            routePoints.add(userPoint)
-
-            shops.forEach { shop ->
-                if (!shop.latShop.isNullOrEmpty() && !shop.longShop.isNullOrEmpty()) {
-                    val shopPoint = Point.fromLngLat(shop.longShop.toDouble(), shop.latShop.toDouble())
-                    routePoints.add(shopPoint)
-                    createShopMarker(shopPoint, shop.nameShop ?: "Toko")
-                }
-            }
-            val tokoDikirim = shops.mapNotNull { it.nameShop }
-            Log.d("RouteDebug", "Toko yang dikirim ke API Optimisasi: $tokoDikirim")
-            runOptimization(routePoints)
-        }
+        viewModel.getTop5RecommendedShops(requireContext(), lat, lon)
     }
 
     private fun createShopMarker(point: Point, name: String) {
@@ -214,16 +220,6 @@ class RouteFragment : Fragment() {
             .withIconImage("marker-15")
 
         pointAnnotationManager.create(options)
-    }
-
-    private fun findNearestShop(point: Point, shops: List<GetShopData>): GetShopData? {
-        return shops.minByOrNull { shop ->
-            val shopLat = shop.latShop?.toDoubleOrNull() ?: return@minByOrNull Double.MAX_VALUE
-            val shopLng = shop.longShop?.toDoubleOrNull() ?: return@minByOrNull Double.MAX_VALUE
-            val dLat = shopLat - point.latitude()
-            val dLng = shopLng - point.longitude()
-            sqrt(dLat * dLat + dLng * dLng)
-        }
     }
 
     private fun runOptimization(points: List<Point>) {
@@ -242,9 +238,8 @@ class RouteFragment : Fragment() {
                 response: Response<OptimizationResponse>
             ) {
                 if (response.isSuccessful && response.body()?.trips()?.isNotEmpty() == true) {
-                    val trip = response.body()!!.trips()!![0]
-                    val jsonResponse = Gson().toJson(response.body())
-                    Log.d("RouteDebug", "Response dari API Optimization:\n$jsonResponse")
+                    val body = response.body()!!
+                    val trip = body.trips()!![0]
                     val geometry = trip.geometry()
                     val totalDistanceMeters = trip.distance() ?: 0.0
                     val totalDistanceKm = totalDistanceMeters / 1000
@@ -254,14 +249,29 @@ class RouteFragment : Fragment() {
                         val optimizedCoords = LineString.fromPolyline(geometry, 6).coordinates()
                         drawRoute(optimizedCoords)
 
-                        val orderedShops = mutableListOf<GetShopData>()
-                        for (point in optimizedCoords) {
-                            val matched = findNearestShop(point, originalShops)
-                            if (matched != null && !orderedShops.contains(matched)) {
-                                orderedShops.add(matched)
-                            }
-                        }
+                        val usedShopIds = mutableSetOf<String>() // atau Int jika idShop kamu integer
+
+                        val orderedShops = body.waypoints()
+                            ?.sortedBy { it.waypointIndex() }
+                            ?.mapNotNull { waypoint ->
+                                val lat = waypoint.location()!!.latitude()
+                                val lon = waypoint.location()!!.longitude()
+
+                                originalShops.find { shop ->
+                                    val shopLat = shop.latShop?.toDoubleOrNull()
+                                    val shopLon = shop.longShop?.toDoubleOrNull()
+                                    val isSame = shopLat != null && shopLon != null &&
+                                            abs(shopLat - lat) < 0.0003 && abs(shopLon - lon) < 0.0003 &&
+                                            !usedShopIds.contains(shop.idShop)
+
+                                    if (isSame) usedShopIds.add(shop.idShop!!)
+                                    isSame
+                                }
+                            } ?: emptyList()
+
                         Log.d("RouteDebug", "Urutan toko setelah optimasi:\n${Gson().toJson(orderedShops.map { it.nameShop })}")
+
+                        // Update UI
                         adapter.updateData(orderedShops)
                     }
                 } else {
@@ -310,7 +320,8 @@ class RouteFragment : Fragment() {
 
         currentStyle.addImage(
             "arrow-icon",
-            AppCompatResources.getDrawable(requireContext(), R.drawable.ic_arrow_forward)!!.toBitmap()
+            AppCompatResources.getDrawable(requireContext(), R.drawable.ic_arrow_forward)!!
+                .toBitmap()
         )
 
         val arrowLayer = symbolLayer(arrowLayerId, arrowSourceId) {
@@ -340,42 +351,47 @@ class RouteFragment : Fragment() {
         handler.post(runnable)
     }
 
-    private fun showStepByStepTutorials() {
-        val config = ShowcaseConfig().apply {
-            delay = 400
+    private fun findNearestShop(point: Point, shops: List<GetShopData>): GetShopData? {
+        return shops.minByOrNull { shop ->
+            val shopLat = shop.latShop?.toDoubleOrNull() ?: return@minByOrNull Double.MAX_VALUE
+            val shopLng = shop.longShop?.toDoubleOrNull() ?: return@minByOrNull Double.MAX_VALUE
+            val dLat = shopLat - point.latitude()
+            val dLng = shopLng - point.longitude()
+            sqrt(dLat * dLat + dLng * dLng)
         }
-
-        val sequence = MaterialShowcaseSequence(requireActivity(), "SHOWCASE_ROUTE_FRAGMENT").apply {
-            setConfig(config)
-
-            addSequenceItem(
-                MaterialShowcaseView.Builder(requireActivity())
-                    .setTarget(binding.tambahTokoButton)
-                    .setTitleText("Tambah Toko")
-                    .setDismissText("Selanjutnya")
-                    .setContentText("Gunakan ini jika semua toko yang terdaftar sudah habis.")
-                    .withRectangleShape(false)
-                    .setShapePadding(10)
-                    .build()
-            )
-
-            addSequenceItem(
-                MaterialShowcaseView.Builder(requireActivity())
-                    .setTarget(binding.refreshItem)
-                    .setTitleText("Refresh Rute")
-                    .setDismissText("Selesai")
-                    .setContentText("Klik untuk menggambarkan ulang jalur ke toko yang direkomendasikan.")
-                    .withRectangleShape(false)
-                    .setShapePadding(10)
-                    .build()
-            )
-        }
-
-        sequence.start()
     }
 
-    private fun showAlertDialog(message: String, success: Boolean) {
-        Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
+    private fun showStepByStepTutorials() {
+        val config = ShowcaseConfig().apply { delay = 400 }
+
+        val sequence =
+            MaterialShowcaseSequence(requireActivity(), "SHOWCASE_ROUTE_FRAGMENT").apply {
+                setConfig(config)
+
+                addSequenceItem(
+                    MaterialShowcaseView.Builder(requireActivity())
+                        .setTarget(binding.tambahTokoButton)
+                        .setTitleText("Tambah Toko")
+                        .setDismissText("Selanjutnya")
+                        .setContentText("Gunakan ini jika semua toko yang terdaftar sudah habis.")
+                        .withRectangleShape(false)
+                        .setShapePadding(10)
+                        .build()
+                )
+
+                addSequenceItem(
+                    MaterialShowcaseView.Builder(requireActivity())
+                        .setTarget(binding.refreshItem)
+                        .setTitleText("Refresh Rute")
+                        .setDismissText("Selesai")
+                        .setContentText("Klik untuk menggambarkan ulang jalur ke toko yang direkomendasikan.")
+                        .withRectangleShape(false)
+                        .setShapePadding(10)
+                        .build()
+                )
+            }
+
+        sequence.start()
     }
 
     override fun onDestroyView() {
