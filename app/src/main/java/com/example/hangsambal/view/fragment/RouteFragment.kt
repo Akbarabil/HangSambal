@@ -8,7 +8,6 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -29,7 +28,6 @@ import com.example.hangsambal.util.KeyIntent
 import com.example.hangsambal.view.activity.MerchantDataActivity
 import com.example.hangsambal.view.activity.SpreadingActivity
 import com.example.hangsambal.viewmodel.RouteViewModel
-import com.google.gson.Gson
 import com.mapbox.api.directions.v5.DirectionsCriteria
 import com.mapbox.api.optimization.v1.MapboxOptimization
 import com.mapbox.api.optimization.v1.models.OptimizationResponse
@@ -60,8 +58,7 @@ import retrofit2.Response
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseSequence
 import uk.co.deanwild.materialshowcaseview.MaterialShowcaseView
 import uk.co.deanwild.materialshowcaseview.ShowcaseConfig
-import kotlin.math.abs
-import kotlin.math.sqrt
+
 
 class RouteFragment : Fragment() {
 
@@ -80,17 +77,15 @@ class RouteFragment : Fragment() {
 
     private val listener = object : ItemClickListener<GetShopData> {
         override fun onClickItem(item: GetShopData) {
-            val intent = Intent(requireContext(), SpreadingActivity::class.java)
-            intent.putExtra(KeyIntent.KEY_ID_SHOP, item.idShop)
-            startActivity(intent)
+            startActivity(Intent(requireContext(), SpreadingActivity::class.java).apply {
+                putExtra(KeyIntent.KEY_ID_SHOP, item.idShop)
+            })
         }
 
         override fun onClickMap(item: GetShopData) {
-            val intent = Intent(
-                Intent.ACTION_VIEW,
+            val uri =
                 Uri.parse("http://maps.google.com/maps?daddr=${item.latShop},${item.longShop}")
-            )
-            startActivity(intent)
+            startActivity(Intent(Intent.ACTION_VIEW, uri))
         }
     }
 
@@ -130,14 +125,11 @@ class RouteFragment : Fragment() {
         }
 
         binding.refreshItem.setOnClickListener {
-            currentPoint?.let { point ->
-                getRecommendedShops(point)
-            }
+            currentPoint?.let(::getRecommendedShops)
         }
 
         binding.tambahTokoButton.setOnClickListener {
-            val intent = Intent(requireContext(), MerchantDataActivity::class.java)
-            startActivity(intent)
+            startActivity(Intent(requireContext(), MerchantDataActivity::class.java))
         }
 
         observeViewModel()
@@ -145,23 +137,21 @@ class RouteFragment : Fragment() {
 
     private fun observeViewModel() {
         viewModel.top5Shops.observe(viewLifecycleOwner) { shops ->
-            if (currentPoint != null) {
+            currentPoint?.let { userPoint ->
                 originalShops = shops
                 pointAnnotationManager.deleteAll()
-                val routePoints = mutableListOf<Point>()
-                routePoints.add(currentPoint!!)
 
+                val routePoints = mutableListOf(userPoint)
                 shops.forEach { shop ->
-                    if (!shop.latShop.isNullOrEmpty() && !shop.longShop.isNullOrEmpty()) {
-                        val shopPoint =
-                            Point.fromLngLat(shop.longShop.toDouble(), shop.latShop.toDouble())
+                    val lat = shop.latShop?.toDoubleOrNull()
+                    val lon = shop.longShop?.toDoubleOrNull()
+                    if (lat != null && lon != null) {
+                        val shopPoint = Point.fromLngLat(lon, lat)
                         routePoints.add(shopPoint)
                         createShopMarker(shopPoint, shop.nameShop ?: "Toko")
                     }
                 }
 
-                val tokoDikirim = shops.mapNotNull { it.nameShop }
-                Log.d("RouteDebug", "Toko yang dikirim ke API Optimisasi: $tokoDikirim")
                 runOptimization(routePoints)
             }
         }
@@ -171,7 +161,8 @@ class RouteFragment : Fragment() {
         if (ContextCompat.checkSelfPermission(
                 requireContext(),
                 Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
+            ) ==
+            PackageManager.PERMISSION_GRANTED
         ) {
             enableUserLocation()
         } else {
@@ -205,9 +196,11 @@ class RouteFragment : Fragment() {
     }
 
     private fun getRecommendedShops(userPoint: Point) {
-        val lat = userPoint.latitude().toString()
-        val lon = userPoint.longitude().toString()
-        viewModel.getTop5RecommendedShops(requireContext(), lat, lon)
+        viewModel.getTop5RecommendedShops(
+            requireContext(),
+            userPoint.latitude().toString(),
+            userPoint.longitude().toString()
+        )
     }
 
     private fun createShopMarker(point: Point, name: String) {
@@ -218,7 +211,6 @@ class RouteFragment : Fragment() {
             .withTextSize(12.0)
             .withTextColor(Color.BLACK)
             .withIconImage("marker-15")
-
         pointAnnotationManager.create(options)
     }
 
@@ -227,9 +219,9 @@ class RouteFragment : Fragment() {
             .coordinates(points)
             .profile(DirectionsCriteria.PROFILE_DRIVING)
             .accessToken(getString(R.string.mapbox_access_token))
-            .source("first")
-            .destination("last")
-            .roundTrip(false)
+            .source("any")
+            .destination("any")
+            .roundTrip(true)
             .build()
 
         client.enqueueCall(object : Callback<OptimizationResponse> {
@@ -237,51 +229,37 @@ class RouteFragment : Fragment() {
                 call: Call<OptimizationResponse>,
                 response: Response<OptimizationResponse>
             ) {
-                if (response.isSuccessful && response.body()?.trips()?.isNotEmpty() == true) {
-                    val body = response.body()!!
-                    val trip = body.trips()!![0]
-                    val geometry = trip.geometry()
-                    val totalDistanceMeters = trip.distance() ?: 0.0
-                    val totalDistanceKm = totalDistanceMeters / 1000
-                    binding.distanceTextView.text = String.format("Total jarak: %.2f km", totalDistanceKm)
-
-                    if (geometry != null) {
-                        val optimizedCoords = LineString.fromPolyline(geometry, 6).coordinates()
-                        drawRoute(optimizedCoords)
-
-                        val usedShopIds = mutableSetOf<String>() // atau Int jika idShop kamu integer
-
-                        val orderedShops = body.waypoints()
-                            ?.sortedBy { it.waypointIndex() }
-                            ?.mapNotNull { waypoint ->
-                                val lat = waypoint.location()!!.latitude()
-                                val lon = waypoint.location()!!.longitude()
-
-                                originalShops.find { shop ->
-                                    val shopLat = shop.latShop?.toDoubleOrNull()
-                                    val shopLon = shop.longShop?.toDoubleOrNull()
-                                    val isSame = shopLat != null && shopLon != null &&
-                                            abs(shopLat - lat) < 0.0003 && abs(shopLon - lon) < 0.0003 &&
-                                            !usedShopIds.contains(shop.idShop)
-
-                                    if (isSame) usedShopIds.add(shop.idShop!!)
-                                    isSame
-                                }
-                            } ?: emptyList()
-
-                        Log.d("RouteDebug", "Urutan toko setelah optimasi:\n${Gson().toJson(orderedShops.map { it.nameShop })}")
-
-                        // Update UI
-                        adapter.updateData(orderedShops)
-                    }
-                } else {
-                    Log.e("RouteDebug", "Response gagal atau kosong: ${response.errorBody()?.string()}")
+                if (!response.isSuccessful || response.body()?.trips().isNullOrEmpty()) {
+                    Toast.makeText(
+                        requireContext(),
+                        "Optimisasi gagal: ${response.code()}",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    return
                 }
+
+                val trip = response.body()!!.trips()!!.first()
+                val geometry = trip.geometry()
+                val totalDistanceKm = (trip.distance() ?: 0.0) / 1000
+                binding.distanceTextView.text =
+                    String.format("Total jarak: %.2f km", totalDistanceKm)
+                val routePoints = LineString.fromPolyline(geometry!!, 6).coordinates()
+                drawRoute(routePoints)
+
+                val orderedShops = viewModel.getOrderedShopsFromWaypoints(
+                    response.body()?.waypoints().orEmpty(),
+                    originalShops
+                )
+
+                adapter.updateData(orderedShops)
             }
 
             override fun onFailure(call: Call<OptimizationResponse>, t: Throwable) {
-                Toast.makeText(requireContext(), "Gagal optimasi: ${t.localizedMessage}", Toast.LENGTH_SHORT).show()
-                Log.e("RouteDebug", "Optimisasi gagal: ${t.localizedMessage}")
+                Toast.makeText(
+                    requireContext(),
+                    "Gagal optimasi: ${t.localizedMessage}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         })
     }
@@ -299,39 +277,32 @@ class RouteFragment : Fragment() {
         currentStyle.removeStyleLayer(arrowLayerId)
         currentStyle.removeStyleSource(arrowSourceId)
 
-        val routeSource = geoJsonSource(sourceId) {
+        currentStyle.addSource(geoJsonSource(sourceId) {
             geometry(LineString.fromLngLats(emptyList()))
-        }
-        currentStyle.addSource(routeSource)
-
-        val lineLayer = lineLayer(layerId, sourceId) {
+        })
+        currentStyle.addLayer(lineLayer(layerId, sourceId) {
             lineColor(ContextCompat.getColor(requireContext(), R.color.green_light))
             lineWidth(5.0)
             lineCap(LineCap.ROUND)
             lineJoin(LineJoin.ROUND)
             lineOpacity(0.9)
-        }
-        currentStyle.addLayer(lineLayer)
+        })
 
-        val arrowSource = geoJsonSource(arrowSourceId) {
+        currentStyle.addSource(geoJsonSource(arrowSourceId) {
             geometry(LineString.fromLngLats(routePoints))
-        }
-        currentStyle.addSource(arrowSource)
-
+        })
         currentStyle.addImage(
             "arrow-icon",
             AppCompatResources.getDrawable(requireContext(), R.drawable.ic_arrow_forward)!!
                 .toBitmap()
         )
-
-        val arrowLayer = symbolLayer(arrowLayerId, arrowSourceId) {
+        currentStyle.addLayerAbove(symbolLayer(arrowLayerId, arrowSourceId) {
             iconImage("arrow-icon")
             symbolPlacement(SymbolPlacement.LINE)
             iconSize(0.5)
             iconRotate(0.0)
             iconAllowOverlap(true)
-        }
-        currentStyle.addLayerAbove(arrowLayer, layerId)
+        }, layerId)
 
         val handler = Handler(Looper.getMainLooper())
         val animatedPoints = mutableListOf<Point>()
@@ -340,9 +311,8 @@ class RouteFragment : Fragment() {
             override fun run() {
                 if (index < routePoints.size) {
                     animatedPoints.add(routePoints[index])
-                    currentStyle.getSourceAs<GeoJsonSource>(sourceId)?.geometry(
-                        LineString.fromLngLats(animatedPoints)
-                    )
+                    currentStyle.getSourceAs<GeoJsonSource>(sourceId)
+                        ?.geometry(LineString.fromLngLats(animatedPoints))
                     index++
                     handler.postDelayed(this, 300)
                 }
@@ -350,17 +320,6 @@ class RouteFragment : Fragment() {
         }
         handler.post(runnable)
     }
-
-    private fun findNearestShop(point: Point, shops: List<GetShopData>): GetShopData? {
-        return shops.minByOrNull { shop ->
-            val shopLat = shop.latShop?.toDoubleOrNull() ?: return@minByOrNull Double.MAX_VALUE
-            val shopLng = shop.longShop?.toDoubleOrNull() ?: return@minByOrNull Double.MAX_VALUE
-            val dLat = shopLat - point.latitude()
-            val dLng = shopLng - point.longitude()
-            sqrt(dLat * dLat + dLng * dLng)
-        }
-    }
-
     private fun showStepByStepTutorials() {
         val config = ShowcaseConfig().apply { delay = 400 }
 
@@ -393,12 +352,14 @@ class RouteFragment : Fragment() {
 
         sequence.start()
     }
-
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
 }
+
+
+
 
 
 

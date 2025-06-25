@@ -1,5 +1,6 @@
 package com.example.hangsambal.adapter
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -29,16 +30,21 @@ class StockHomeAdapter() : RecyclerView.Adapter<StockHomeAdapter.ViewHolder>() {
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val product = products[position]
+
+        // Logging untuk melihat isi yang ditampilkan
+        Log.d("StockHomeAdapter", "Produk: ${product.nameProduct}, Stok: ${product.qtyProduct}, Posisi: $position")
+
         Glide.with(holder.itemView.context)
-            .load(products[position].imageProduct)
+            .load(product.imageProduct)
             .placeholder(R.drawable.ic_no_image)
             .error(R.drawable.ic_no_image)
             .diskCacheStrategy(DiskCacheStrategy.ALL)
             .into(holder.imageViewProduct)
 
-        holder.textViewNamaProduk.text = products[position].nameProduct
-        holder.textViewStock.text = if (products[position].qtyProduct.toString().toInt() >= 0) {
-            products[position].qtyProduct.toString() + " pax"
+        holder.textViewNamaProduk.text = product.nameProduct
+        holder.textViewStock.text = if (product.qtyProduct!!.toInt() >= 0) {
+            "${product.qtyProduct} pax"
         } else {
             "0 pax"
         }

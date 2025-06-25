@@ -80,7 +80,6 @@ class HomeFragment : Fragment(), LocationListener {
         val data = JWTUtils.decoded(Prefs(requireContext()).jwt.toString())
         binding.textViewNama.text = data.nameUser.toString()
 
-        // === Inisialisasi Banner ViewPager ===
         binding.bannerViewPager.adapter = BannerAdapter(bannerList)
 
         bannerHandler = Handler(Looper.getMainLooper())
@@ -92,7 +91,6 @@ class HomeFragment : Fragment(), LocationListener {
             }
         }
 
-        // === Lokasi ===
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(requireContext())
         locationRequest = LocationRequest().apply {
             priority = LocationRequest.PRIORITY_HIGH_ACCURACY

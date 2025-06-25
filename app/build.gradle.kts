@@ -62,7 +62,7 @@ dependencies {
     //play service location untuk depedencies fused location
     implementation ("com.google.android.gms:play-services-location:20.0.0")
 
-    // Mapbox SDK versi terbaru (update jika ada versi baru)
+    // Mapbox SDK
     implementation("com.mapbox.maps:android:11.1.0")
     implementation("com.mapbox.mapboxsdk:mapbox-sdk-services:7.4.0")
     // OkHttp untuk request ke Optimization API
