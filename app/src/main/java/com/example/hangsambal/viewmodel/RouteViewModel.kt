@@ -18,8 +18,6 @@ class RouteViewModel : BaseViewModel() {
     val top5Shops = MutableLiveData<List<GetShopData>>()
 
     fun getTop5RecommendedShops(context: Context, latitude: String, longitude: String, page: Int = 1) {
-        top5Shops.value = emptyList()
-
         NetworkClient().getService(context)
             .getShopRecommendation(
                 Prefs(context).jwt.toString(),

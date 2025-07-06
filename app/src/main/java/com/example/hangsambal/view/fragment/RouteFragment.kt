@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -109,7 +110,6 @@ class RouteFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         viewModel = ViewModelProvider(this)[RouteViewModel::class.java]
-
         adapter = ShopRecommendationAdapter(emptyList(), listener)
         binding.recyclerViewListToko.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerViewListToko.adapter = adapter
@@ -140,7 +140,6 @@ class RouteFragment : Fragment() {
             currentPoint?.let { userPoint ->
                 originalShops = shops
                 pointAnnotationManager.deleteAll()
-
                 val routePoints = mutableListOf(userPoint)
                 shops.forEach { shop ->
                     val lat = shop.latShop?.toDoubleOrNull()
@@ -151,7 +150,6 @@ class RouteFragment : Fragment() {
                         createShopMarker(shopPoint, shop.nameShop ?: "Toko")
                     }
                 }
-
                 runOptimization(routePoints)
             }
         }
@@ -223,7 +221,6 @@ class RouteFragment : Fragment() {
             .destination("any")
             .roundTrip(true)
             .build()
-
         client.enqueueCall(object : Callback<OptimizationResponse> {
             override fun onResponse(
                 call: Call<OptimizationResponse>,
@@ -237,20 +234,16 @@ class RouteFragment : Fragment() {
                     ).show()
                     return
                 }
-
                 val trip = response.body()!!.trips()!!.first()
                 val geometry = trip.geometry()
                 val totalDistanceKm = (trip.distance() ?: 0.0) / 1000
-                binding.distanceTextView.text =
-                    String.format("Total jarak: %.2f km", totalDistanceKm)
+                binding.distanceTextView.text = String.format("Total jarak: %.2f km", totalDistanceKm)
                 val routePoints = LineString.fromPolyline(geometry!!, 6).coordinates()
                 drawRoute(routePoints)
-
                 val orderedShops = viewModel.getOrderedShopsFromWaypoints(
                     response.body()?.waypoints().orEmpty(),
                     originalShops
                 )
-
                 adapter.updateData(orderedShops)
             }
 
@@ -266,17 +259,14 @@ class RouteFragment : Fragment() {
 
     private fun drawRoute(routePoints: List<Point>) {
         if (routePoints.size < 2) return
-
         val sourceId = "optimized-route-source"
         val layerId = "optimized-route-layer"
         val arrowLayerId = "arrow-layer"
         val arrowSourceId = "arrow-source"
-
         currentStyle.removeStyleLayer(layerId)
         currentStyle.removeStyleSource(sourceId)
         currentStyle.removeStyleLayer(arrowLayerId)
         currentStyle.removeStyleSource(arrowSourceId)
-
         currentStyle.addSource(geoJsonSource(sourceId) {
             geometry(LineString.fromLngLats(emptyList()))
         })
@@ -314,7 +304,7 @@ class RouteFragment : Fragment() {
                     currentStyle.getSourceAs<GeoJsonSource>(sourceId)
                         ?.geometry(LineString.fromLngLats(animatedPoints))
                     index++
-                    handler.postDelayed(this, 300)
+                    handler.postDelayed(this, 600)
                 }
             }
         }
